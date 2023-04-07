@@ -15,6 +15,7 @@ class TSPSolver:
     def __init__(self, gui_view):
         """Initialize the TSPSolver."""
         self._scenario = None
+        self.geneticSolver = GeneticSolver(scenario=self._scenario)
 
     def setupWithScenario(self, scenario):
         """Set up with scenario."""
@@ -94,8 +95,9 @@ class TSPSolver:
             solution found, and three null values for fields not used for this
             algorithm
         """
-        geneticSolver = GeneticSolver(scenario=self._scenario, time_allowance=time_allowance)
-        return geneticSolver.solve()
+        self.geneticSolver._scenario = self._scenario
+        self.geneticSolver._timeAllowance = time_allowance
+        return self.geneticSolver.solve()
 
 
 # GENETIC ALGORITHM
@@ -103,10 +105,11 @@ class GeneticSolver:
     """Genetic algorithm solver for the traveling salesperson problem."""
 
     # Selection types
-    SELECTION_ROULETTE = 0
-    SELECTION_TOURNAMENT = 1
-    SELECTION_RANKED = 2
-    SELECTION_FITNESS_SCALING = 3
+    SELECTION_ROULETTE = "Roulette Wheel Selection"
+    SELECTION_TOURNAMENT = "Tournament Selection"
+    SELECTION_RANKED = "Ranked Selection"
+    SELECTION_FITNESS_SCALING = "Fitness Scaling Selection"
+    selectionTypes = [SELECTION_ROULETTE, SELECTION_TOURNAMENT, SELECTION_RANKED, SELECTION_FITNESS_SCALING]
 
     def __init__(self, scenario, time_allowance=60.0):
         """Initialize the genetic algorithm solver."""
