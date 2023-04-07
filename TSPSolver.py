@@ -86,7 +86,7 @@ class TSPSolver:
         return tree.solve()
 
     def fancy(self, time_allowance=60.0):
-        """Compute a solution to the TSP problem for the scenario using a fancy algorithm (group project).
+        """Compute a solution to the TSP problem for the scenario using a genetic algorithm.
 
         Returns:
             results dictionary for GUI that contains three ints: cost of best solution,
@@ -94,9 +94,107 @@ class TSPSolver:
             solution found, and three null values for fields not used for this
             algorithm
         """
+        geneticSolver = GeneticSolver(scenario=self._scenario, time_allowance=time_allowance)
+
+
+# GENETIC ALGORITHM
+class GeneticSolver:
+    """Genetic algorithm solver for the traveling salesperson problem."""
+
+    # Selection types
+    SELECTION_ROULETTE = 0
+    SELECTION_TOURNAMENT = 1
+    SELECTION_RANKED = 2
+    SELECTION_FITNESS_SCALING = 3
+
+    def __init__(self, scenario, time_allowance=60.0):
+        """Initialize the genetic algorithm solver."""
+        self._scenario = scenario
+        self._timeAllowance = time_allowance  # TODO: Do we care about time allowance for genetic algorithm?
+        self._generation = 0
+        self._population = []
+
+        # General parameters
+        self.populationSize = 100
+        self.newChildrenPerGeneration = 50
+
+        # Crossover parameters
+        self.numCrossoversPerGeneration = 50
+        self.numCrossoverSplits = 2
+        self.crossoverSelectionType = self.SELECTION_ROULETTE
+
+        # Mutation parameters
+        self.numMutationsPerGeneration = 50
+        self.numMutationsPerSolution = 2
+        self.mutationSelectionType = self.SELECTION_ROULETTE
+
+        # Survivor selection parameters
+        self.percentOldSurvivors = 0.5
+        self.survivorSelectionType = self.SELECTION_ROULETTE
+
+    def solve(self):
+        """Solve the genetic algorithm problem."""
+        while True:
+            self._generation += 1
+
+            self.parentSelection()
+
+            self.recombination()
+
+            self.mutation()
+
+            self.evaluate()
+
+            self.survivorSelection()
+
+    def parentSelection(self):
+        """Perform parent selection for the genetic algorithm."""
+        pass
+
+    def recombination(self):
+        """Perform recombination for the genetic algorithm."""
+        pass
+
+    def mutation(self):
+        """Perform mutation for the genetic algorithm."""
+        pass
+
+    def evaluate(self):
+        """Evaluate the population for the genetic algorithm."""
+        pass
+
+    def survivorSelection(self):
+        """Perform survivor selection for the genetic algorithm."""
         pass
 
 
+class GeneticSolution:
+    """Solution for the genetic algorithm.
+
+    Attributes:
+        _solution (list): The list of cities in the solution.
+        _fitness (int): The fitness of the solution.
+        _generation (int): The generation the solution was created in.
+    """
+
+    def __init__(self, route: list, generation: int) -> None:
+        """Initialize the genetic solution."""
+        self._solution = route
+        self._fitness = self.calculateFitness()
+        self._generation = generation
+
+    def calculateFitness(self) -> int:
+        """Calculate the fitness of the solution."""
+        totalFitness = 0
+        for i, city in enumerate(self._solution):
+            nextCity = self._solution[(i + 1) % len(self._solution)]
+            totalFitness += city.costTo(nextCity)
+
+        self._fitness = totalFitness
+        return totalFitness
+
+
+# GREEDY ALGORITHM
 def greedyTSP(cities, time_allowance=60.0, startIndex=0, startTime=None):
     """Compute a solution to the TSP problem for the scenario using a greedy algorithm.
 
@@ -105,7 +203,7 @@ def greedyTSP(cities, time_allowance=60.0, startIndex=0, startTime=None):
 
     The space complexity of this algorithm is O(n) because it has to store the route and the list of cities to search.
 
-    Arguemnts:
+    Arguments:
         cities (list): The list of cities to find a route for.
         time_allowance (float): The amount of time to allow the algorithm to run for. Defaults to 60 seconds.
         startIndex (int): The index of the city to start the route with. Defaults to 0.
@@ -170,6 +268,7 @@ def greedyTSP(cities, time_allowance=60.0, startIndex=0, startTime=None):
     return results
 
 
+# BRANCH AND BOUND ALGORITHM
 class Node:
     """Class to hold information for each node in the branch and bound tree.
 
