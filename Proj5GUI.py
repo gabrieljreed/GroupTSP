@@ -7,6 +7,7 @@ import sys
 import time
 
 from PyQt6.QtCore import *
+import PyQt6.QtCore as QtCore
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 from TSPClasses import *
@@ -255,6 +256,7 @@ class Proj5GUI(QMainWindow):
 
     def solveClicked(self):
         self.solver.setupWithScenario(self._scenario)
+        self.setGeneticSolverInputs()
 
         max_time = float(self.timeLimit.text())
         self.view.clearEdges([(64, 64, 255)])  # get rid of edge labels but not point labels
@@ -283,6 +285,21 @@ class Proj5GUI(QMainWindow):
         else:
             print('GOT NULL SOLUTION BACK!!')
         self.view.repaint()
+
+    def setGeneticSolverInputs(self):
+        self.solver.geneticSolver.populationSize = int(self.populationSizeLineEdit.text())
+        self.solver.geneticSolver.newChildrenPerGeneration = int(self.newChildrenLineEdit.text())
+
+        self.solver.geneticSolver.numCrossoversPerGeneration = int(self.crossoverLineEdit.text())
+        self.solver.geneticSolver.numCrossoverSplits = int(self.numCrossoverSplits.text())
+        self.solver.geneticSolver.crossoverSelectionType = self.crossoverTypeComboBox.currentText()
+
+        self.solver.geneticSolver.numMutationsPerGeneration = int(self.numMutationsPerGenerationLineEdit.text())
+        self.solver.geneticSolver.numMutationsPerSolution = int(self.numMutationsPerSolutionLineEdit.text())
+        self.solver.geneticSolver.mutationSelectionType = self.mutationTypeComboBox.currentText()
+
+        self.solver.geneticSolver.percentOldSurvivors = float(self.percentOldSurvivorsSlider.value()) / 100.0
+        self.solver.geneticSolver.survivorSelectionType = self.survivorSelectionTypeComboBox.currentText()
 
     def checkGenInputs(self):
         seed = self.curSeed.text()
@@ -452,13 +469,17 @@ class Proj5GUI(QMainWindow):
         self.diffDropDown.setCurrentIndex(3)
         self.diffChanged(3)  # to handle start state
 
+        self.geneticWidget = QWidget()
+
         for alg in self.ALGORITHMS:
             self.algDropDown.addItem(alg[0])
         self.algDropDown.activated.connect(self.algChanged)
         self.algDropDown.setCurrentIndex(2)
-        self.algChanged(2)  # to handle start state
 
         self.graphReady = False
+
+        self.setupGeneticUI(vbox)
+        self.algChanged(2)  # to handle start state
 
         self.show()
 
@@ -466,7 +487,139 @@ class Proj5GUI(QMainWindow):
         self.checkGenInputs()
 
     def algChanged(self, text):
-        pass
+        self.geneticWidget.setEnabled(text == 3)
+
+    def setupGeneticUI(self, layout):
+        """Set up the UI for the genetic algorithm."""
+        self.geneticWidget = QWidget()
+        self.geneticLayout = QHBoxLayout()
+        self.geneticWidget.setLayout(self.geneticLayout)
+        # Add a spacer widget above
+        spacer = QWidget()
+        spacer.setMinimumWidth(10)
+        layout.addWidget(spacer)
+        layout.addWidget(QLabel("GENETIC ALGORITHM PARAMETERS"))
+        layout.addWidget(self.geneticWidget)
+
+        class LineEditWithLabel(QWidget):
+            def __init__(self, parent=None, labelText="", lineEditText="") -> None:
+                super().__init__(parent)
+                self.layout = QHBoxLayout()
+                self.setLayout(self.layout)
+                self.label = QLabel(labelText)
+                self.layout.addWidget(self.label)
+                self.lineEdit = QLineEdit(lineEditText)
+                self.lineEdit.setMaximumWidth(50)
+                self.layout.addWidget(self.lineEdit)
+
+            def setLabel(self, text: str):
+                self.label.setText(text)
+
+            def setLineEdit(self, text: str):
+                self.lineEdit.setText(text)
+
+            def text(self):
+                """Return the text in the line edit."""
+                return self.lineEdit.text()
+
+        geneticSolver = GeneticSolver(self._scenario)
+
+        # General parameters
+        generalParamsWidget = QWidget()
+        # generalParamsWidget.setMaximumWidth(200)
+        generalParamsLayout = QVBoxLayout()
+        generalParamsLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        generalParamsWidget.setLayout(generalParamsLayout)
+        self.geneticLayout.addWidget(generalParamsWidget)
+
+        generalParamsLayout.addWidget(QLabel('General Parameters'))
+
+        self.populationSizeLineEdit = LineEditWithLabel(labelText="Population Size",
+                                                        lineEditText=str(geneticSolver.populationSize))
+        generalParamsLayout.addWidget(self.populationSizeLineEdit)
+
+        self.newChildrenLineEdit = LineEditWithLabel(labelText="New Children",
+                                                     lineEditText=str(geneticSolver.newChildrenPerGeneration))
+        generalParamsLayout.addWidget(self.newChildrenLineEdit)
+
+        # Crossover parameters
+        crossoverParamsWidget = QWidget()
+        # crossoverParamsWidget.setMaximumWidth(200)
+        crossoverParamsLayout = QVBoxLayout()
+        crossoverParamsLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        crossoverParamsWidget.setLayout(crossoverParamsLayout)
+        self.geneticLayout.addWidget(crossoverParamsWidget)
+
+        crossoverParamsLayout.addWidget(QLabel('Crossover Parameters'))
+
+        self.crossoverLineEdit = LineEditWithLabel(labelText="Crossovers per generation",
+                                                   lineEditText=str(geneticSolver.numCrossoversPerGeneration))
+        crossoverParamsLayout.addWidget(self.crossoverLineEdit)
+
+        self.numCrossoverSplits = LineEditWithLabel(labelText="Number of Crossover Splits",
+                                                    lineEditText=str(geneticSolver.numCrossoverSplits))
+        crossoverParamsLayout.addWidget(self.numCrossoverSplits)
+
+        crossoverParamsLayout.addWidget(QLabel("Crossover Parent Selection Type"))
+        self.crossoverTypeComboBox = QComboBox()
+        self.crossoverTypeComboBox.addItems(geneticSolver.selectionTypes)
+        crossoverParamsLayout.addWidget(self.crossoverTypeComboBox)
+
+        # Mutation parameters
+        mutationParamsWidget = QWidget()
+        # mutationParamsWidget.setMaximumWidth(200)
+        mutationParamsLayout = QVBoxLayout()
+        mutationParamsLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        mutationParamsWidget.setLayout(mutationParamsLayout)
+        self.geneticLayout.addWidget(mutationParamsWidget)
+
+        mutationParamsLayout.addWidget(QLabel('Mutation Parameters'))
+
+        self.numMutationsPerGenerationLineEdit = LineEditWithLabel(
+            labelText="Mutations per generation",
+            lineEditText=str(geneticSolver.numMutationsPerGeneration)
+        )
+        mutationParamsLayout.addWidget(self.numMutationsPerGenerationLineEdit)
+
+        self.numMutationsPerSolutionLineEdit = LineEditWithLabel(
+            labelText="Mutations per solution",
+            lineEditText=str(geneticSolver.numMutationsPerSolution)
+        )
+
+        mutationParamsLayout.addWidget(QLabel("Mutation Parent Selection Type"))
+        self.mutationTypeComboBox = QComboBox()
+        self.mutationTypeComboBox.addItems(geneticSolver.selectionTypes)
+        mutationParamsLayout.addWidget(self.mutationTypeComboBox)
+
+        # Survivor selection parameters
+        survivorSelectionParamsWidget = QWidget()
+        survivorSelectionParamsLayout = QVBoxLayout()
+        survivorSelectionParamsLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        survivorSelectionParamsWidget.setLayout(survivorSelectionParamsLayout)
+        self.geneticLayout.addWidget(survivorSelectionParamsWidget)
+
+        survivorSelectionParamsLayout.addWidget(QLabel('Survivor Selection Parameters'))
+
+        percentOldSurvivorsWidget = QWidget()
+        percentOldSurvivorsLayout = QHBoxLayout()
+        percentOldSurvivorsWidget.setLayout(percentOldSurvivorsLayout)
+        survivorSelectionParamsLayout.addWidget(percentOldSurvivorsWidget)
+
+        percentOldSurvivorsLayout.addWidget(QLabel("% Old Survivors"))
+        self.percentOldSurvivorsSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.percentOldSurvivorsSlider.setMinimum(0)
+        self.percentOldSurvivorsSlider.setMaximum(100)
+        percentOldSurvivorsLayout.addWidget(self.percentOldSurvivorsSlider)
+        self.percentOldSurvivorsLabel = QLabel()
+        self.percentOldSurvivorsLabel.setText(f"{self.percentOldSurvivorsSlider.value() / 100}%")
+        percentOldSurvivorsLayout.addWidget(self.percentOldSurvivorsLabel)
+        self.percentOldSurvivorsSlider.valueChanged.connect(lambda: self.percentOldSurvivorsLabel.setText(
+            f"{self.percentOldSurvivorsSlider.value() / 100}%"))
+
+        survivorSelectionParamsLayout.addWidget(QLabel("Survivor Selection Type"))
+        self.survivorSelectionTypeComboBox = QComboBox()
+        self.survivorSelectionTypeComboBox.addItems(geneticSolver.selectionTypes)
+        survivorSelectionParamsLayout.addWidget(self.survivorSelectionTypeComboBox)
 
 
 if __name__ == '__main__':
