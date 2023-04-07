@@ -95,6 +95,7 @@ class TSPSolver:
             algorithm
         """
         geneticSolver = GeneticSolver(scenario=self._scenario, time_allowance=time_allowance)
+        return geneticSolver.solve()
 
 
 # GENETIC ALGORITHM
@@ -134,12 +135,14 @@ class GeneticSolver:
 
     def solve(self):
         """Solve the genetic algorithm problem."""
-        while True:
+        self._generation = 0
+
+        self.initializePopulation()
+
+        while True:  # TODO: Add stopping condition(s)
             self._generation += 1
 
-            self.parentSelection()
-
-            self.recombination()
+            self.crossover()
 
             self.mutation()
 
@@ -147,24 +150,76 @@ class GeneticSolver:
 
             self.survivorSelection()
 
-    def parentSelection(self):
-        """Perform parent selection for the genetic algorithm."""
+        # TODO: Add return
+
+    def initializePopulation(self):
+        """Initialize the population for the genetic algorithm."""
+        for i in range(self.populationSize):
+            self._population.append(self.createRandomSolution(self._generation))
+
+    def createRandomSolution(self, generation):
+        """Create a random solution for the genetic algorithm."""
+        cities = self._scenario.getCities()
+        ncities = len(cities)
+
+        foundTour = False
+        while not foundTour:
+            # create a random permutation
+            perm = np.random.permutation(ncities)
+            route = []
+            # Now build the route using the random permutation
+            for i in range(ncities):
+                route.append(cities[perm[i]])
+
+            solution = GeneticSolution(route, generation)
+            if solution.calculateFitness() < np.inf:
+                # Found a valid route
+                foundTour = True
+
+        return solution
+
+    def crossover(self):  # TODO: Implement
+        """Perform crossover for the genetic algorithm."""
         pass
 
-    def recombination(self):
-        """Perform recombination for the genetic algorithm."""
-        pass
-
-    def mutation(self):
+    def mutation(self):  # TODO: Implement
         """Perform mutation for the genetic algorithm."""
         pass
 
     def evaluate(self):
         """Evaluate the population for the genetic algorithm."""
+        for solution in self._population:
+            solution.calculateFitness()
+
+    def survivorSelection(self):  # TODO: Implement
+        """Perform survivor selection for the genetic algorithm."""
         pass
 
-    def survivorSelection(self):
-        """Perform survivor selection for the genetic algorithm."""
+    def selectParents(self):
+        """Select parents for the genetic algorithm."""
+        if self.crossoverSelectionType == self.SELECTION_ROULETTE:
+            return self.rouletteSelection()
+        elif self.crossoverSelectionType == self.SELECTION_TOURNAMENT:
+            return self.tournamentSelection()
+        elif self.crossoverSelectionType == self.SELECTION_RANKED:
+            return self.rankedSelection()
+        elif self.crossoverSelectionType == self.SELECTION_FITNESS_SCALING:
+            return self.fitnessScalingSelection()
+
+    def rouletteSelection(self):  # TODO: Implement
+        """Perform roulette selection for the genetic algorithm."""
+        pass
+
+    def tournamentSelection(self):  # TODO: Implement
+        """Perform tournament selection for the genetic algorithm."""
+        pass
+
+    def rankedSelection(self):  # TODO: Implement
+        """Perform ranked selection for the genetic algorithm."""
+        pass
+
+    def fitnessScalingSelection(self):  # TODO: Implement
+        """Perform fitness scaling selection for the genetic algorithm."""
         pass
 
 
