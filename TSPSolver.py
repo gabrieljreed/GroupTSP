@@ -114,13 +114,15 @@ class GeneticSolver:
     def __init__(self, scenario, time_allowance=60.0):
         """Initialize the genetic algorithm solver."""
         self._scenario = scenario
-        self._timeAllowance = time_allowance  # TODO: Do we care about time allowance for genetic algorithm?
+        self._timeAllowance = time_allowance
         self._generation = 0
         self._population = []
+        self._bssf = None
 
         # General parameters
         self.populationSize = 100
         self.newChildrenPerGeneration = 50
+        self.maxGenerationsNoChange = 100
 
         # Crossover parameters
         self.numCrossoversPerGeneration = 50
@@ -136,13 +138,15 @@ class GeneticSolver:
         self.percentOldSurvivors = 0.5
         self.survivorSelectionType = self.SELECTION_ROULETTE
 
-    def solve(self):
+    def solve(self) -> dict:
         """Solve the genetic algorithm problem."""
+        startTime = time.time()
         self._generation = 0
 
         self.initializePopulation()
+        self._bssf = self._population[0]
 
-        while True:  # TODO: Add stopping condition(s)
+        while True:
             self._generation += 1
 
             self.crossover()
@@ -153,7 +157,27 @@ class GeneticSolver:
 
             self.survivorSelection()
 
-        # TODO: Add return
+            # Check if the time is up
+            if time.time() - self._startTime > self._timeAllowance:
+                break
+
+            # Check if the best solution has changed in a while
+            if self._generation - self._bssf.generation > self.maxGenerationsNoChange:
+                break
+
+        solution = TSPSolution(self._bssf._solution)
+        endTime = time.time()
+
+        results = {}
+        results["cost"] = solution.cost
+        results["time"] = endTime - startTime
+        results["soln"] = solution
+        results["count"] = 1
+        results['max'] = None
+        results['total'] = None
+        results['pruned'] = None
+
+        return results
 
     def initializePopulation(self):
         """Initialize the population for the genetic algorithm."""
@@ -193,6 +217,8 @@ class GeneticSolver:
         """Evaluate the population for the genetic algorithm."""
         for solution in self._population:
             solution.calculateFitness()
+            if solution.fitness < self._bssf.fitness:
+                self._bssf = solution
 
     def survivorSelection(self):  # TODO: Implement
         """Perform survivor selection for the genetic algorithm."""
