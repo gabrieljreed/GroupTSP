@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
+from copy import copy
 import heapq
 import itertools
+from random import randrange
 import time
 
 import numpy as np
@@ -52,13 +54,13 @@ class TSPSolver:
                 # Found a valid route
                 foundTour = True
         end_time = time.time()
-        results['cost'] = bssf.cost if foundTour else math.inf
-        results['time'] = end_time - start_time
-        results['count'] = count
-        results['soln'] = bssf
-        results['max'] = None
-        results['total'] = None
-        results['pruned'] = None
+        results["cost"] = bssf.cost if foundTour else math.inf
+        results["time"] = end_time - start_time
+        results["count"] = count
+        results["soln"] = bssf
+        results["max"] = None
+        results["total"] = None
+        results["pruned"] = None
         return results
 
     def greedy(self, time_allowance=60.0):
@@ -109,7 +111,12 @@ class GeneticSolver:
     SELECTION_TOURNAMENT = "Tournament Selection"
     SELECTION_RANKED = "Ranked Selection"
     SELECTION_FITNESS_SCALING = "Fitness Scaling Selection"
-    selectionTypes = [SELECTION_ROULETTE, SELECTION_TOURNAMENT, SELECTION_RANKED, SELECTION_FITNESS_SCALING]
+    selectionTypes = [
+        SELECTION_ROULETTE,
+        SELECTION_TOURNAMENT,
+        SELECTION_RANKED,
+        SELECTION_FITNESS_SCALING,
+    ]
 
     def __init__(self, scenario, time_allowance=60.0):
         """Initialize the genetic algorithm solver."""
@@ -117,6 +124,7 @@ class GeneticSolver:
         self._timeAllowance = time_allowance
         self._generation = 0
         self._population = []
+        self._children = []
         self._bssf = None
 
         # General parameters
@@ -140,7 +148,7 @@ class GeneticSolver:
 
     def solve(self) -> dict:
         """Solve the genetic algorithm problem."""
-        startTime = time.time()
+        self._startTime = time.time()
         self._generation = 0
 
         self.initializePopulation()
@@ -162,7 +170,7 @@ class GeneticSolver:
                 break
 
             # Check if the best solution has changed in a while
-            if self._generation - self._bssf.generation > self.maxGenerationsNoChange:
+            if self._generation - self._bssf._generation > self.maxGenerationsNoChange:
                 break
 
         solution = TSPSolution(self._bssf._solution)
@@ -170,12 +178,12 @@ class GeneticSolver:
 
         results = {}
         results["cost"] = solution.cost
-        results["time"] = endTime - startTime
+        results["time"] = endTime - self._startTime
         results["soln"] = solution
         results["count"] = 1
-        results['max'] = None
-        results['total'] = None
-        results['pruned'] = None
+        results["max"] = None
+        results["total"] = None
+        results["pruned"] = None
 
         return results
 
@@ -206,23 +214,121 @@ class GeneticSolver:
         return solution
 
     def crossover(self):  # TODO: Implement
-        """Perform crossover for the genetic algorithm."""
-        pass
+        generation_crossovers_perfromed = 0
+        while generation_crossovers_perfromed < self.numCrossoversPerGeneration:
+            # TODO: use parent selection function instead?
+            parent1 = self._population[randrange(self.populationSize)]._solution
+            parent2 = self._population[randrange(self.populationSize)]._solution
+            while parent1 == parent2:
+                parent2 = self._population[randrange(self.populationSize)]._solution
+            first_index = randrange(len(parent1))
+            second_index = randrange(len(parent1))
+            child1 = [math.inf] * len(parent1)
+            child2 = [math.inf] * len(parent1)
+
+            if first_index > second_index:
+                temp = first_index
+                first_index = second_index
+                second_index = temp
+
+            # swath = parent2[first_index:second_index]
+
+            child1 = (
+                child1[0:first_index]
+                + parent1[first_index:second_index]
+                + child1[second_index:]
+            )
+            for i in range(first_index, second_index):
+                if parent2[i] not in child1:
+                    parent1_temp = parent1[i]
+                    while True:
+                        parent2_index = parent2.index(parent1_temp)
+                        if parent2_index < first_index or parent2_index >= second_index:
+                            break
+                        else:
+                            parent1_temp = parent1[parent2_index]
+                    child1[parent2_index] = parent2[i]
+            for i in range(len(parent1)):
+                child1[i] = child1[i] if child1[i] != math.inf else parent2[i]
+
+            child2 = (
+                child2[0:first_index]
+                + parent2[first_index:second_index]
+                + child2[second_index:]
+            )
+            for i in range(first_index, second_index):
+                if parent1[i] not in child2:
+                    parent2_temp = parent2[i]
+                    while True:
+                        parent1_index = parent1.index(parent2_temp)
+                        if parent1_index < first_index or parent1_index >= second_index:
+                            break
+                        else:
+                            parent2_temp = parent2[parent1_index]
+                    child2[parent1_index] = parent1[i]
+            for i in range(len(parent2)):
+                child2[i] = child2[i] if child2[i] != math.inf else parent1[i]
+
+            self._children.append(GeneticSolution(child1, self._generation))
+            self._children.append(GeneticSolution(child2, self._generation))
+            generation_crossovers_perfromed += 1
 
     def mutation(self):  # TODO: Implement
         """Perform mutation for the genetic algorithm."""
-        pass
+        generation_mutations_performed = 0
+        mutated = []
+        while generation_mutations_performed < self.numMutationsPerGeneration:
+            to_mutate = self._population[randrange(self.populationSize)]
+            if to_mutate in mutated:
+                continue
+            mutated.append(to_mutate)
+            generation_mutations_performed += 1
+            old_route = copy(to_mutate._solution)
+            route_mutations_performed = 0
+            while route_mutations_performed < self.numMutationsPerSolution:
+                first_index = randrange(len(old_route))
+                second_index = randrange(len(old_route))
+                temp = old_route[first_index]
+                old_route[first_index] = old_route[second_index]
+                old_route[second_index] = temp
+                route_mutations_performed += 1
+            solution = GeneticSolution(old_route, self._generation)
+            self._children.append(solution)
 
     def evaluate(self):
         """Evaluate the population for the genetic algorithm."""
         for solution in self._population:
             solution.calculateFitness()
-            if solution.fitness < self._bssf.fitness:
+            if solution._fitness < self._bssf._fitness:
+                self._bssf = solution
+        # Do we need this once we have actual selection?
+        for solution in self._children:
+            solution.calculateFitness()
+            if solution._fitness < self._bssf._fitness:
                 self._bssf = solution
 
     def survivorSelection(self):  # TODO: Implement
         """Perform survivor selection for the genetic algorithm."""
-        pass
+        # num_old_survivors = int(self.percentOldSurvivors * self.populationSize)
+        # num_new_survivors = self.populationSize - num_old_selected
+
+        selected = []
+        # num_old_selected = 0
+        # num_new_selected = 0
+        num_selected = 0
+        while num_selected < self.populationSize:
+            if self.survivorSelection == self.SELECTION_TOURNAMENT:
+                selected.append(self.tournamentSelection())
+            elif self.survivorSelection == self.SELECTION_ROULETTE:
+                selected.append(self.rouletteSelection())
+            elif self.survivorSelection == self.SELECTION_RANKED:
+                selected.append(self.rankedSelection())
+            elif self.survivorSelection == self.SELECTION_FITNESS_SCALING:
+                selected.append(self.fitnessScalingSelection())
+            num_selected += 1
+        # self._population = selected
+        # TEMP unitl seleciton functions work
+        self._population = self._population[0:50] + self._children[0:50]
 
     def selectParents(self):
         """Select parents for the genetic algorithm."""
@@ -323,9 +429,9 @@ def greedyTSP(cities, time_allowance=60.0, startIndex=0, startTime=None):
             results["time"] = midTime - startTime
             results["soln"] = None
             results["count"] = len(route)
-            results['max'] = None
-            results['total'] = None
-            results['pruned'] = None
+            results["max"] = None
+            results["total"] = None
+            results["pruned"] = None
             return results
 
         route.append(closestCity)
@@ -336,7 +442,12 @@ def greedyTSP(cities, time_allowance=60.0, startIndex=0, startTime=None):
     # If the route found isn't complete, run the alrogithm again with a different starting city
     if len(route) != len(cities) or route[-1].costTo(route[0]) == math.inf:
         print("Route not complete, running again with different starting city")
-        return greedyTSP(cities, time_allowance=time_allowance, startIndex=startIndex + 1, startTime=startTime)
+        return greedyTSP(
+            cities,
+            time_allowance=time_allowance,
+            startIndex=startIndex + 1,
+            startTime=startTime,
+        )
 
     solution = TSPSolution(route)
     endTime = time.time()
@@ -345,9 +456,9 @@ def greedyTSP(cities, time_allowance=60.0, startIndex=0, startTime=None):
     results["time"] = endTime - startTime
     results["soln"] = solution
     results["count"] = 1
-    results['max'] = None
-    results['total'] = None
-    results['pruned'] = None
+    results["max"] = None
+    results["total"] = None
+    results["pruned"] = None
 
     return results
 
@@ -563,7 +674,9 @@ class BranchAndBound:
         print(f"Greedy solution: {self._bssf}")
 
         self.searchByDepth = True
-        print(f"Switching to branch and bound after {self.minBSSFBeforeSwitch} solutions")
+        print(
+            f"Switching to branch and bound after {self.minBSSFBeforeSwitch} solutions"
+        )
 
         # Create the initial node
         startCity = self._scenario.getCities()[0]
@@ -595,14 +708,23 @@ class BranchAndBound:
                     self._bssf = node.score
                     self._bssfPath = node.path
                     self._numSolutions += 1
-                    print(f"Found a better solution! (#{self._numSolutions}: {self._bssf})")
+                    print(
+                        f"Found a better solution! (#{self._numSolutions}: {self._bssf})"
+                    )
 
-                    if self._numSolutions > self.minBSSFBeforeSwitch and self.searchByDepth:
+                    if (
+                        self._numSolutions > self.minBSSFBeforeSwitch
+                        and self.searchByDepth
+                    ):
                         self.searchByDepth = False
-                        print("Switching to prioritizing lower bound over depth. "
-                              f"Heapifying {len(self.priorityQueue)} nodes...)")
+                        print(
+                            "Switching to prioritizing lower bound over depth. "
+                            f"Heapifying {len(self.priorityQueue)} nodes...)"
+                        )
                         # Redo the heap with the new priority
-                        self.priorityQueue = [(node.score, node) for score, node in self.priorityQueue]
+                        self.priorityQueue = [
+                            (node.score, node) for score, node in self.priorityQueue
+                        ]
                         heapq.heapify(self.priorityQueue)
                 else:
                     self._numPruned += 1
@@ -616,7 +738,9 @@ class BranchAndBound:
                         heapq.heappush(self.priorityQueue, (newNode.score, newNode))
                     else:
                         # Prioritize depth over lower bound
-                        heapq.heappush(self.priorityQueue, (newNode.depth * -1, newNode))
+                        heapq.heappush(
+                            self.priorityQueue, (newNode.depth * -1, newNode)
+                        )
 
             # Update the max queue size
             if len(self.priorityQueue) > maxQueueSize:
@@ -638,9 +762,9 @@ class BranchAndBound:
         results["time"] = endTime - self._startTime
         results["soln"] = solution
         results["count"] = self._numSolutions
-        results['max'] = maxQueueSize
-        results['total'] = self._numNodes
-        results['pruned'] = self._numPruned
+        results["max"] = maxQueueSize
+        results["total"] = self._numNodes
+        results["pruned"] = self._numPruned
 
         return results
 
