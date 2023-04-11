@@ -10,6 +10,7 @@ import numpy as np
 from PyQt6.QtCore import QLineF, QPointF
 from TSPClasses import *
 
+
 class TSPSolver:
     """TSP Solver."""
 
@@ -145,6 +146,8 @@ class GeneticSolver:
         self.percentOldSurvivors = 0.5
         self.survivorSelectionType = self.SELECTION_ROULETTE
 
+        self.tournamentSize = 5
+
     def solve(self) -> dict:
         """Solve the genetic algorithm problem."""
         self._startTime = time.time()
@@ -215,11 +218,10 @@ class GeneticSolver:
     def crossover(self):  # TODO: Implement
         generation_crossovers_perfromed = 0
         while generation_crossovers_perfromed < self.numCrossoversPerGeneration:
-            # TODO: use parent selection function instead?
-            parent1 = self._population[randrange(self.populationSize)]._solution
-            parent2 = self._population[randrange(self.populationSize)]._solution
-            while parent1 == parent2:
-                parent2 = self._population[randrange(self.populationSize)]._solution
+            parents = self.selectParents()
+            parent1 = parents[0]._solution
+            parent2 = parents[1]._solution
+
             first_index = randrange(len(parent1))
             second_index = randrange(len(parent1))
             child1 = [math.inf] * len(parent1)
@@ -229,8 +231,6 @@ class GeneticSolver:
                 temp = first_index
                 first_index = second_index
                 second_index = temp
-
-            # swath = parent2[first_index:second_index]
 
             child1 = (
                 child1[0:first_index]
@@ -272,14 +272,25 @@ class GeneticSolver:
             self._children.append(GeneticSolution(child2, self._generation))
             generation_crossovers_perfromed += 1
 
-    def mutation(self):  # TODO: Implement
+    def mutation(self):
         """Perform mutation for the genetic algorithm."""
         generation_mutations_performed = 0
         mutated = []
         while generation_mutations_performed < self.numMutationsPerGeneration:
             to_mutate = self._population[randrange(self.populationSize)]
-            if to_mutate in mutated:
-                continue
+            if self.mutationSelectionType == self.SELECTION_TOURNAMENT:
+                to_mutate = self.tournamentSelection(
+                    self._population, self.tournamentSize
+                )
+            elif self.mutationSelectionType == self.SELECTION_ROULETTE:
+                to_mutate = self.rouletteSelection(self._population)
+            elif self.mutationSelectionType == self.SELECTION_RANKED:
+                to_mutate = self.rankedSelection(self._population)
+            elif self.mutationSelectionType == self.SELECTION_FITNESS_SCALING:
+                to_mutate = self.fitnessScalingSelection(self._population)
+
+            # if to_mutate in mutated:
+            #     continue
             mutated.append(to_mutate)
             generation_mutations_performed += 1
             old_route = copy(to_mutate._solution)
@@ -308,38 +319,57 @@ class GeneticSolver:
 
     def survivorSelection(self):  # TODO: Implement
         """Perform survivor selection for the genetic algorithm."""
-        # num_old_survivors = int(self.percentOldSurvivors * self.populationSize)
-        # num_new_survivors = self.populationSize - num_old_selected
+        num_old_survivors = int(self.percentOldSurvivors * self.populationSize)
+        num_new_survivors = self.populationSize - num_old_survivors
 
         selected = []
-        # num_old_selected = 0
-        # num_new_selected = 0
-        num_selected = 0
-        while num_selected < self.populationSize:
-            if self.survivorSelection == self.SELECTION_TOURNAMENT:
-                selected.append(self.tournamentSelection())
-            elif self.survivorSelection == self.SELECTION_ROULETTE:
-                selected.append(self.rouletteSelection())
-            elif self.survivorSelection == self.SELECTION_RANKED:
-                selected.append(self.rankedSelection())
-            elif self.survivorSelection == self.SELECTION_FITNESS_SCALING:
-                selected.append(self.fitnessScalingSelection())
-            num_selected += 1
-        # self._population = selected
+        num_old_selected = 0
+        num_new_selected = 0
+        while num_old_selected < num_old_survivors:
+            if self.survivorSelectionType == self.SELECTION_TOURNAMENT:
+                selected.append(self.tournamentSelection(self._population, 2))
+            elif self.survivorSelectionType == self.SELECTION_ROULETTE:
+                selected.append(self.rouletteSelection(self._population))
+            elif self.survivorSelectionType == self.SELECTION_RANKED:
+                selected.append(self.rankedSelection(self._population))
+            elif self.survivorSelectionType == self.SELECTION_FITNESS_SCALING:
+                selected.append(self.fitnessScalingSelection(self._population))
+            num_old_selected += 1
+        while num_new_selected < num_new_survivors:
+            if self.survivorSelectionType == self.SELECTION_TOURNAMENT:
+                selected.append(self.tournamentSelection(self._children, 2))
+            elif self.survivorSelectionType == self.SELECTION_ROULETTE:
+                selected.append(self.rouletteSelection(self._children))
+            elif self.survivorSelectionType == self.SELECTION_RANKED:
+                selected.append(self.rankedSelection(self._children))
+            elif self.survivorSelectionType == self.SELECTION_FITNESS_SCALING:
+                selected.append(self.fitnessScalingSelection(self._children))
+            num_new_selected += 1
+        temp_set = set(self._population)
+        print("Num unqique cities = ", len(temp_set))
+        self._population = selected
+        temp_set = set(selected)
+        print("Num unqique cities = ", len(temp_set))
+        self._children = []
         # TEMP unitl seleciton functions work
-        self._population = self._population[0:50] + self._children[0:50]
+        # self._population = self._population[0:50] + self._children[0:50]
 
     def selectParents(self):
         """Select parents for the genetic algorithm."""
-        if self.crossoverSelectionType == self.SELECTION_ROULETTE:
-            return self.rouletteSelection()
-        elif self.crossoverSelectionType == self.SELECTION_TOURNAMENT:
-            return self.tournamentSelection()
-        elif self.crossoverSelectionType == self.SELECTION_RANKED:
-            return self.rankedSelection()
-        elif self.crossoverSelectionType == self.SELECTION_FITNESS_SCALING:
-            return self.fitnessScalingSelection()
-    
+        parents = []
+        while len(parents) < 2:
+            if self.crossoverSelectionType == self.SELECTION_ROULETTE:
+                parent = self.rouletteSelection(self._population)
+            elif self.crossoverSelectionType == self.SELECTION_TOURNAMENT:
+                parent = self.tournamentSelection(self._population)
+            elif self.crossoverSelectionType == self.SELECTION_RANKED:
+                parent = self.rankedSelection(self._population)
+            elif self.crossoverSelectionType == self.SELECTION_FITNESS_SCALING:
+                parent = self.fitnessScalingSelection(self._population)
+            if parent not in parents:
+                parents.append(parent)
+        return parents
+
     def rouletteSelection(self, population):
         """Perform roulette selection for the genetic algorithm."""
         # fitness represents city distance, so use inverse so lower fitnesses are more
@@ -350,20 +380,20 @@ class GeneticSolver:
 
         partialSum = 0
         for city in population:
-            partialSum += (1 / city.calculateFitness() * 1000)
+            partialSum += 1 / city.calculateFitness() * 1000
             if partialSum >= rand:
                 return city
 
     def tournamentSelection(self, population, tournamentSize=5):
         """Perform tournament selection for the genetic algorithm."""
-        '''Note that the tournamentSize parameter sets the number 
+        """Note that the tournamentSize parameter sets the number 
         of solutions that will compete in each tournament. The higher 
         the value of tournamentSize, the stronger the selection pressure will be, 
         and the more likely it is that the best solutions will be selected as parents. 
         However, larger tournaments also increase the risk of premature convergence, 
         because they reduce the diversity of the population. Therefore, you should 
         experiment with different values of tournamentSize to find the one that works 
-        best for your problem.'''
+        best for your problem."""
         # Note: if using this for survival selection, you need to call this function population size times?
         # could consider lowering chance of duplications by removing selected cities from populations?
         participants = []
@@ -390,23 +420,27 @@ class GeneticSolver:
         rand = random.randint(0, totalRank)
         partialSum = 0
         for city in population:
-            partialSum +=  ranks[city]
+            partialSum += ranks[city]
             if partialSum >= rand:
                 return city
 
-    def fitnessScalingSelection(self, population): # TODO: fix bug causing None to be selected
+    def fitnessScalingSelection(
+        self, population
+    ):  # TODO: fix bug causing None to be selected
         # consider making this a check box rather than one of the drop
         # down options since it can be used with a selection
         """Perform fitness scaling selection for the genetic algorithm."""
         fitnessValues = [city.calculateFitness() for city in population]
         minFitness = min(fitnessValues)
         maxFitness = max(fitnessValues)
-        
+
         # Scale values to fit in the 0 - 100 range
         scaledValues = {}
         totalFitness = 0
         for city in population:
-            scaledVal = (city.calculateFitness() - minFitness) * (100 / (maxFitness - minFitness))
+            scaledVal = (city.calculateFitness() - minFitness) * (
+                100 / (maxFitness - minFitness)
+            )
             scaledValues[city] = scaledVal
             totalFitness += scaledVal
 
@@ -423,11 +457,9 @@ class GeneticSolver:
         partialSum = 0
         for city in population:
             if scaledValues[city] != 0:
-                partialSum += (1 / scaledValues[city] * 1000)
+                partialSum += 1 / scaledValues[city] * 1000
             if partialSum >= rand:
                 return city
-
-        
 
 
 class GeneticSolution:
