@@ -10,7 +10,6 @@ import numpy as np
 from PyQt6.QtCore import QLineF, QPointF
 from TSPClasses import *
 
-
 class TSPSolver:
     """TSP Solver."""
 
@@ -217,10 +216,13 @@ class GeneticSolver:
         generation_crossovers_perfromed = 0
         while generation_crossovers_perfromed < self.numCrossoversPerGeneration:
             # TODO: use parent selection function instead?
-            parent1 = self._population[randrange(self.populationSize)]._solution
-            parent2 = self._population[randrange(self.populationSize)]._solution
+            #parent1 = self._population[randrange(self.populationSize)]._solution
+            #parent2 = self._population[randrange(self.populationSize)]._solution
+            parent1 = self.tournamentSelection(7)
+            parent2 = self.tournamentSelection(7)
             while parent1 == parent2:
-                parent2 = self._population[randrange(self.populationSize)]._solution
+                #parent2 = self._population[randrange(self.populationSize)]._solution
+                parent2 = self.tournamentSelection(7)
             first_index = randrange(len(parent1))
             second_index = randrange(len(parent1))
             child1 = [math.inf] * len(parent1)
@@ -341,21 +343,79 @@ class GeneticSolver:
         elif self.crossoverSelectionType == self.SELECTION_FITNESS_SCALING:
             return self.fitnessScalingSelection()
 
-    def rouletteSelection(self):  # TODO: Implement
+    def selectionHelperPickOne(self, population):
+        return 
+    
+    def rouletteSelection(self, population):
         """Perform roulette selection for the genetic algorithm."""
-        pass
+        # fitness represents city distance, so use inverse so lower fitnesses are more
+        # likely to be chosen
+        fitnessValues = [((1 / city.calculateFitness()) * 1000) for city in population]
+        totalFitness = int(sum(fitnessValues))
+        rand = random.randint(0, totalFitness)
 
-    def tournamentSelection(self):  # TODO: Implement
+        partialSum = 0
+        for city in population:
+            partialSum += (1 / city.calculateFitness() * 1000)
+            if partialSum >= rand:
+                return city
+
+    def tournamentSelection(self, population, tournamentSize=5):
         """Perform tournament selection for the genetic algorithm."""
-        pass
+        '''Note that the tournamentSize parameter sets the number 
+        of solutions that will compete in each tournament. The higher 
+        the value of tournamentSize, the stronger the selection pressure will be, 
+        and the more likely it is that the best solutions will be selected as parents. 
+        However, larger tournaments also increase the risk of premature convergence, 
+        because they reduce the diversity of the population. Therefore, you should 
+        experiment with different values of tournamentSize to find the one that works 
+        best for your problem.'''
+        # Note: if using this for survival selection, you need to call this function population size times?
+        # could consider lowering chance of duplications by removing selected cities from populations?
+        participants = []
+        while len(participants) <= tournamentSize:
+            selectedCity = population[random.randint(0, len(population) - 1)]
+            if selectedCity not in participants:
+                participants.append(selectedCity)
+        return min(participants, key=lambda x: x._fitness)
 
-    def rankedSelection(self):  # TODO: Implement
+    def rankedSelection(self, population):
         """Perform ranked selection for the genetic algorithm."""
-        pass
+        # Sort the solutions by their fitness scores
+        population = sorted(population, key=lambda city: city.calculateFitness())
+
+        # Assign ranks to each solution
+        ranks = {}
+        for i, city in enumerate(population):
+            ranks[city] = len(population) - i
+
+        # Calculate sum of ranks
+        totalRank = sum([ranks[city] for city in population])
+
+        # Make your selection based on rank order
+        rand = random.randint(0, totalRank)
+        partialSum = 0
+        for city in population:
+            partialSum +=  ranks[city]
+            if partialSum >= rand:
+                return city
 
     def fitnessScalingSelection(self):  # TODO: Implement
         """Perform fitness scaling selection for the genetic algorithm."""
-        pass
+        fitness_values = [solution.calculateFitness() for solution in self._population]
+        totalFitness = sum(fitness_values)
+        probabilities = [f/totalFitness for f in fitness_values]
+        cumulativeProbabilities = np.cumsum(probabilities)
+
+        selected = []
+        for i in range(self.newChildrenPerGeneration):
+            r = np.random.uniform()
+            for j in range(len(cumulativeProbabilities)):
+                if r < cumulativeProbabilities[j]:
+                    selected.append(self._population[j])
+                    break
+
+        return selected
 
 
 class GeneticSolution:
