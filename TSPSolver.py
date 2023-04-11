@@ -216,13 +216,10 @@ class GeneticSolver:
         generation_crossovers_perfromed = 0
         while generation_crossovers_perfromed < self.numCrossoversPerGeneration:
             # TODO: use parent selection function instead?
-            #parent1 = self._population[randrange(self.populationSize)]._solution
-            #parent2 = self._population[randrange(self.populationSize)]._solution
-            parent1 = self.tournamentSelection(7)
-            parent2 = self.tournamentSelection(7)
+            parent1 = self._population[randrange(self.populationSize)]._solution
+            parent2 = self._population[randrange(self.populationSize)]._solution
             while parent1 == parent2:
-                #parent2 = self._population[randrange(self.populationSize)]._solution
-                parent2 = self.tournamentSelection(7)
+                parent2 = self._population[randrange(self.populationSize)]._solution
             first_index = randrange(len(parent1))
             second_index = randrange(len(parent1))
             child1 = [math.inf] * len(parent1)
@@ -342,9 +339,6 @@ class GeneticSolver:
             return self.rankedSelection()
         elif self.crossoverSelectionType == self.SELECTION_FITNESS_SCALING:
             return self.fitnessScalingSelection()
-
-    def selectionHelperPickOne(self, population):
-        return 
     
     def rouletteSelection(self, population):
         """Perform roulette selection for the genetic algorithm."""
@@ -400,22 +394,40 @@ class GeneticSolver:
             if partialSum >= rand:
                 return city
 
-    def fitnessScalingSelection(self):  # TODO: Implement
+    def fitnessScalingSelection(self, population): # TODO: fix bug causing None to be selected
+        # consider making this a check box rather than one of the drop
+        # down options since it can be used with a selection
         """Perform fitness scaling selection for the genetic algorithm."""
-        fitness_values = [solution.calculateFitness() for solution in self._population]
-        totalFitness = sum(fitness_values)
-        probabilities = [f/totalFitness for f in fitness_values]
-        cumulativeProbabilities = np.cumsum(probabilities)
+        fitnessValues = [city.calculateFitness() for city in population]
+        minFitness = min(fitnessValues)
+        maxFitness = max(fitnessValues)
+        
+        # Scale values to fit in the 0 - 100 range
+        scaledValues = {}
+        totalFitness = 0
+        for city in population:
+            scaledVal = (city.calculateFitness() - minFitness) * (100 / (maxFitness - minFitness))
+            scaledValues[city] = scaledVal
+            totalFitness += scaledVal
 
-        selected = []
-        for i in range(self.newChildrenPerGeneration):
-            r = np.random.uniform()
-            for j in range(len(cumulativeProbabilities)):
-                if r < cumulativeProbabilities[j]:
-                    selected.append(self._population[j])
-                    break
+        # Begin selection on newly scaled fitness values
+        fitnessValues = []
+        for city in population:
+            if scaledValues[city] != 0:
+                fitnessValues.append((1 / scaledValues[city]) * 1000)
+            else:
+                fitnessValues.append(0)
 
-        return selected
+        # Make selection
+        rand = random.randint(0, totalFitness)
+        partialSum = 0
+        for city in population:
+            if scaledValues[city] != 0:
+                partialSum += (1 / scaledValues[city] * 1000)
+            if partialSum >= rand:
+                return city
+
+        
 
 
 class GeneticSolution:
