@@ -217,7 +217,12 @@ class GeneticSolver:
 
     def crossover(self):  # TODO: Implement
         generation_crossovers_perfromed = 0
+        interations = 0
         while generation_crossovers_perfromed < self.numCrossoversPerGeneration:
+            interations += 1
+            if interations >= 1000:
+                print("Probably stuck in crossover")
+                exit()
             parents = self.selectParents()
             parent1 = parents[0]._solution
             parent2 = parents[1]._solution
@@ -249,7 +254,9 @@ class GeneticSolver:
                     child1[parent2_index] = parent2[i]
             for i in range(len(parent1)):
                 child1[i] = child1[i] if child1[i] != math.inf else parent2[i]
-
+            child1 = GeneticSolution(child1, self._generation)
+            if self.pruneInfinites and child1._fitness == math.inf:
+                continue
             child2 = (
                 child2[0:first_index]
                 + parent2[first_index:second_index]
@@ -267,16 +274,20 @@ class GeneticSolver:
                     child2[parent1_index] = parent1[i]
             for i in range(len(parent2)):
                 child2[i] = child2[i] if child2[i] != math.inf else parent1[i]
-
-            self._children.append(GeneticSolution(child1, self._generation))
-            self._children.append(GeneticSolution(child2, self._generation))
+            child2 = GeneticSolution(child2, self._generation)
+            if self.pruneInfinites and child2._fitness == math.inf:
+                continue
+            self._children.append(child1)
+            self._children.append(child2)
             generation_crossovers_perfromed += 1
 
     def mutation(self):
         """Perform mutation for the genetic algorithm."""
         generation_mutations_performed = 0
         mutated = []
+        iterations = 0
         while generation_mutations_performed < self.numMutationsPerGeneration:
+            iterations += 1
             to_mutate = self._population[randrange(self.populationSize)]
             if self.mutationSelectionType == self.SELECTION_TOURNAMENT:
                 to_mutate = self.tournamentSelection(
@@ -292,7 +303,6 @@ class GeneticSolver:
             # if to_mutate in mutated:
             #     continue
             mutated.append(to_mutate)
-            generation_mutations_performed += 1
             old_route = copy(to_mutate._solution)
             route_mutations_performed = 0
             while route_mutations_performed < self.numMutationsPerSolution:
@@ -303,7 +313,13 @@ class GeneticSolver:
                 old_route[second_index] = temp
                 route_mutations_performed += 1
             solution = GeneticSolution(old_route, self._generation)
+            if self.pruneInfinites and solution._fitness == math.inf:
+                if iterations >= 1000:
+                    print("probably too many iterations in mutation")
+                    exit()
+                continue
             self._children.append(solution)
+            generation_mutations_performed += 1
 
     def evaluate(self):
         """Evaluate the population for the genetic algorithm."""
@@ -321,8 +337,9 @@ class GeneticSolver:
         """Perform survivor selection for the genetic algorithm."""
         num_old_survivors = int(self.percentOldSurvivors * self.populationSize)
         num_new_survivors = self.populationSize - num_old_survivors
-
-        selected = {}
+        vals = [c._fitness for c in self._children]
+        # print(vals)
+        selected = set()
         iterations = 0
         while len(selected) < num_old_survivors:
             if self.survivorSelectionType == self.SELECTION_TOURNAMENT:
@@ -355,12 +372,12 @@ class GeneticSolver:
             if iterations >= 1000:
                 print("TRIED 1000 times new gen")
                 break
-        print("Population gen: ", self._generation)
-        self.printInfo(self._population)
-        print("Children gen: ", self._generation)
-        self.printInfo(self._children)
-        print("Selection gen: ", self._generation)
-        self.printInfo(selected)
+        # print("Population gen: ", self._generation)
+        # self.printInfo(self._population)
+        # print("Children gen: ", self._generation)
+        # self.printInfo(self._children)
+        # print("Selection gen: ", self._generation)
+        # self.printInfo(selected)
         self._population = list(selected)
         self._children = []
 
@@ -420,15 +437,15 @@ class GeneticSolver:
 
         # Create an array of inverted (and scaled) fitness values (so smaller values win)
         fitnessValues = [((1 / city._fitness)) for city in selectableOptions]
-        print(str(fitnessValues))
+        # print(str(fitnessValues))
 
         # Total our new massage fitness values
         totalFitness = sum(fitnessValues)
-        print("total fitness:" + str(totalFitness))
+        # print("total fitness:" + str(totalFitness))
 
         # Pick a random number in the range of our fitness sum
         rand = random.uniform(0, 1) * totalFitness
-        print("rand:" + str(rand))
+        # print("rand:" + str(rand))
 
         partialSum = 0.0
         for city in selectableOptions:
@@ -459,7 +476,7 @@ class GeneticSolver:
             ]
             participants.append(selectedCity)
 
-        print("participants:" + str(participants))
+        # print("participants:" + str(participants))
 
         # Pick the minimum value among candidates for selection
         selection = min(participants, key=lambda x: x._fitness)
@@ -482,7 +499,7 @@ class GeneticSolver:
         ranks = {}
         for i, city in enumerate(selectableOptions):
             ranks[city] = len(selectableOptions) - i
-        print("ranks:" + str(ranks))
+        # print("ranks:" + str(ranks))
 
         # Calculate selection probabilities
         totalRank = sum([ranks[city] for city in selectableOptions])
@@ -538,8 +555,8 @@ class GeneticSolver:
         # Pick a random number in the range of our fitness sum
         rand = random.randint(0, int(totalFitness))
         # print("scaled values: " + str(scaledValues))
-        print("total fitness: " + str(totalFitness))
-        print("rand: " + str(rand))
+        # print("total fitness: " + str(totalFitness))
+        # print("rand: " + str(rand))
 
         partialSum = 0
         for city in selectableOptions:
@@ -547,7 +564,7 @@ class GeneticSolver:
                 partialSum += 1 / scaledValues[city] * 1000
 
             if partialSum >= rand or len(selectableOptions) == 1:
-                print("partial sum: " + str(partialSum))
+                # print("partial sum: " + str(partialSum))
                 # if len(selectableOptions) == 1:
                 #    print("Handling special 'end cap' case")
                 self.updateSelectableOptions(population, city)
