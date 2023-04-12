@@ -5,10 +5,14 @@ import heapq
 import itertools
 from random import randrange
 import time
+import logging
 
 import numpy as np
 from PyQt6.QtCore import QLineF, QPointF
 from TSPClasses import *
+
+
+logging.basicConfig(filename="TSP.log", level=logging.DEBUG, format="%(message)s")
 
 
 class TSPSolver:
@@ -194,6 +198,29 @@ class GeneticSolver:
         results["max"] = None
         results["total"] = self._generation
         results["pruned"] = None
+
+        # LOGGING
+        logging.debug("PARAMETERS")
+        logging.debug(f"numCities: {len(self._scenario.getCities())}")
+        logging.debug(f"populationSize: {self.populationSize}")
+        logging.debug(f"maxGenerationsNoChange: {self.maxGenerationsNoChange}")
+        logging.debug(f"pruneInfinites: {self.pruneInfinites}")
+        logging.debug(f"numCrossoversPerGeneration: {self.numCrossoversPerGeneration}")
+        logging.debug(f"crossoverSelectionType: {self.crossoverSelectionType}")
+        logging.debug(f"numMutationsPerGeneration: {self.numMutationsPerGeneration}")
+        logging.debug(f"numMutationsPerSolution: {self.numMutationsPerSolution}")
+        logging.debug(f"mutationSelectionType: {self.mutationSelectionType}")
+        logging.debug(f"percentOldSurvivors: {self.percentOldSurvivors}")
+        logging.debug(f"survivorSelectionType: {self.survivorSelectionType}")
+        logging.debug(f"tournamentSize: {self.tournamentSize}")
+
+        logging.debug("\nRESULTS")
+        logging.debug(f"cost: {results['cost']}")
+        logging.debug(f"time: {results['time']}")
+        logging.debug(f"generation: {self._generation}")
+        logging.debug(f"bssf_updates: {results['count']}")
+
+        logging.debug("\n\n")
 
         return results
 
