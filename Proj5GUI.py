@@ -287,7 +287,6 @@ class Proj5GUI(QMainWindow):
 
     def setGeneticSolverInputs(self):
         self.solver.geneticSolver.populationSize = int(self.populationSizeLineEdit.text())
-        self.solver.geneticSolver.newChildrenPerGeneration = int(self.newChildrenLineEdit.text())
         self.solver.geneticSolver.pruneInfinites = self.pruneInfinitesCheckBox.isChecked()
 
         self.solver.geneticSolver.numCrossoversPerGeneration = int(self.crossoverLineEdit.text())
@@ -567,10 +566,6 @@ class Proj5GUI(QMainWindow):
         self.populationSizeLineEdit = LineEditWithLabel(labelText="Population Size",
                                                         lineEditText=str(geneticSolver.populationSize))
         generalParamsLayout.addWidget(self.populationSizeLineEdit)
-
-        self.newChildrenLineEdit = LineEditWithLabel(labelText="New Children",
-                                                     lineEditText=str(geneticSolver.newChildrenPerGeneration))
-        generalParamsLayout.addWidget(self.newChildrenLineEdit)
 
         self.pruneInfinityCheckbox = QCheckBox("Prune Children with infinite cost")
         self.pruneInfinityCheckbox.setChecked(geneticSolver.pruneInfinites)

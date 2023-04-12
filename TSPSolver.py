@@ -130,7 +130,6 @@ class GeneticSolver:
 
         # General parameters
         self.populationSize = 100
-        self.newChildrenPerGeneration = 50
         self.maxGenerationsNoChange = 100
         self.pruneInfinites = False
 
