@@ -180,7 +180,6 @@ class Proj5GUI(QMainWindow):
         self.genParams = {'size': None, 'seed': None, 'diff': None}
 
     def newPoints(self):
-        # TODO - ERROR CHECKING!!!!
         seed = int(self.curSeed.text())
         random.seed(seed)
 
@@ -415,6 +414,26 @@ class Proj5GUI(QMainWindow):
         self.prunedStates.setEnabled(False)
         vbox.addLayout(h)
 
+        # Create a tab widget
+        self.tabWidget = QTabWidget()
+        # self.tabWidget.setTabPosition(QTabWidget.West)
+        # self.tabWidget.setTabShape(QTabWidget.Rounded)
+        vbox.addWidget(self.tabWidget)
+
+        self.generalTab = QWidget()
+        self.tabWidget.addTab(self.generalTab, "General")
+        self.generalTabLayout = QVBoxLayout(self.generalTab)
+        self.generalTabLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        # self.generalTabLayout.setContentsMargins(0, 0, 0, 0)
+        self.generalTabLayout.setSpacing(2)
+
+        self.geneticTab = QWidget()
+        self.tabWidget.addTab(self.geneticTab, "Genetic Algorithm")
+        self.geneticTabLayout = QVBoxLayout(self.geneticTab)
+        self.geneticTabLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        # self.geneticTabLayout.setContentsMargins(0, 0, 0, 0)
+        self.geneticTabLayout.setSpacing(2)
+
         h = QHBoxLayout()
         h.addWidget(QLabel('Problem Size: '))
         h.addWidget(self.size)
@@ -425,7 +444,8 @@ class Proj5GUI(QMainWindow):
         h.addWidget(self.randSeedButton)
         h.addWidget(self.generateButton)
         h.addStretch(1)
-        vbox.addLayout(h)
+        # vbox.addLayout(h)
+        self.generalTabLayout.addLayout(h)
 
         h = QHBoxLayout()
         h.addWidget(QLabel('Algorithm: '))
@@ -435,7 +455,8 @@ class Proj5GUI(QMainWindow):
         h.addWidget(QLabel('seconds'))
         h.addWidget(self.solveButton)
         h.addStretch(1)
-        vbox.addLayout(h)
+        # vbox.addLayout(h)
+        self.generalTabLayout.addLayout(h)
 
         h = QHBoxLayout()
         h.addWidget(QLabel('# Solutions:'))
@@ -448,7 +469,8 @@ class Proj5GUI(QMainWindow):
         self.tourCost.setEnabled(False)
         self.solvedIn.setEnabled(False)
         h.addStretch(1)
-        vbox.addLayout(h)
+        # vbox.addLayout(h)
+        self.generalTabLayout.addLayout(h)
 
         self.lastPath = (None, None)
         self.solveButton.setEnabled(False)
@@ -478,8 +500,13 @@ class Proj5GUI(QMainWindow):
 
         self.graphReady = False
 
-        self.setupGeneticUI(vbox)
+        self.setupGeneticUI(self.geneticTabLayout)
         self.algChanged(2)  # to handle start state
+
+        # Make sure the window isn't bigger than the screen
+        self.resize(self.sizeHint())
+        self.setMinimumSize(self.sizeHint())
+        self.setMaximumSize(self.sizeHint())
 
         self.show()
 
@@ -493,11 +520,13 @@ class Proj5GUI(QMainWindow):
         """Set up the UI for the genetic algorithm."""
         self.geneticWidget = QWidget()
         self.geneticLayout = QHBoxLayout()
+        self.geneticLayout.setContentsMargins(0, 0, 0, 0)
+        self.geneticLayout.setSpacing(2)
         self.geneticWidget.setLayout(self.geneticLayout)
         # Add a spacer widget above
-        spacer = QWidget()
-        spacer.setMinimumWidth(10)
-        layout.addWidget(spacer)
+        # spacer = QWidget()
+        # spacer.setMinimumWidth(10)
+        # layout.addWidget(spacer)
         layout.addWidget(QLabel("GENETIC ALGORITHM PARAMETERS"))
         layout.addWidget(self.geneticWidget)
 
@@ -529,6 +558,7 @@ class Proj5GUI(QMainWindow):
         # generalParamsWidget.setMaximumWidth(200)
         generalParamsLayout = QVBoxLayout()
         generalParamsLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        generalParamsLayout.setSpacing(2)
         generalParamsWidget.setLayout(generalParamsLayout)
         self.geneticLayout.addWidget(generalParamsWidget)
 
@@ -551,6 +581,7 @@ class Proj5GUI(QMainWindow):
         # crossoverParamsWidget.setMaximumWidth(200)
         crossoverParamsLayout = QVBoxLayout()
         crossoverParamsLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        crossoverParamsLayout.setSpacing(2)
         crossoverParamsWidget.setLayout(crossoverParamsLayout)
         self.geneticLayout.addWidget(crossoverParamsWidget)
 
@@ -570,6 +601,7 @@ class Proj5GUI(QMainWindow):
         # mutationParamsWidget.setMaximumWidth(200)
         mutationParamsLayout = QVBoxLayout()
         mutationParamsLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        mutationParamsLayout.setSpacing(2)
         mutationParamsWidget.setLayout(mutationParamsLayout)
         self.geneticLayout.addWidget(mutationParamsWidget)
 
@@ -595,6 +627,7 @@ class Proj5GUI(QMainWindow):
         survivorSelectionParamsWidget = QWidget()
         survivorSelectionParamsLayout = QVBoxLayout()
         survivorSelectionParamsLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft)
+        survivorSelectionParamsLayout.setSpacing(2)
         survivorSelectionParamsWidget.setLayout(survivorSelectionParamsLayout)
         self.geneticLayout.addWidget(survivorSelectionParamsWidget)
 
@@ -611,10 +644,11 @@ class Proj5GUI(QMainWindow):
         self.percentOldSurvivorsSlider.setMaximum(100)
         percentOldSurvivorsLayout.addWidget(self.percentOldSurvivorsSlider)
         self.percentOldSurvivorsLabel = QLabel()
-        self.percentOldSurvivorsLabel.setText(f"{self.percentOldSurvivorsSlider.value() / 100}%")
+        self.percentOldSurvivorsLabel.setText(f"{self.percentOldSurvivorsSlider.value()}%")
+        self.percentOldSurvivorsLabel.setFixedWidth(30)
         percentOldSurvivorsLayout.addWidget(self.percentOldSurvivorsLabel)
         self.percentOldSurvivorsSlider.valueChanged.connect(lambda: self.percentOldSurvivorsLabel.setText(
-            f"{self.percentOldSurvivorsSlider.value() / 100}%"))
+            f"{self.percentOldSurvivorsSlider.value()}%"))
 
         survivorSelectionParamsLayout.addWidget(QLabel("Survivor Selection Type"))
         self.survivorSelectionTypeComboBox = QComboBox()
