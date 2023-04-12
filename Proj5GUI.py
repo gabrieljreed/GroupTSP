@@ -288,6 +288,8 @@ class Proj5GUI(QMainWindow):
     def setGeneticSolverInputs(self):
         self.solver.geneticSolver.populationSize = int(self.populationSizeLineEdit.text())
         self.solver.geneticSolver.pruneInfinites = self.pruneInfinityCheckbox.isChecked()
+        self.solver.geneticSolver.maxGenerationsNoChange = int(self.maxGenerationsNoChangeLineEdit.text())
+        self.solver.geneticSolver.initializationType = self.initializationComboBox.currentText()
 
         self.solver.geneticSolver.numCrossoversPerGeneration = int(self.crossoverLineEdit.text())
         self.solver.geneticSolver.crossoverSelectionType = self.crossoverTypeComboBox.currentText()
@@ -571,6 +573,17 @@ class Proj5GUI(QMainWindow):
         self.pruneInfinityCheckbox.setChecked(geneticSolver.pruneInfinites)
         generalParamsLayout.addWidget(self.pruneInfinityCheckbox)
 
+        self.maxGenerationsNoChangeLineEdit = LineEditWithLabel(labelText="Max generations with no change",
+                                                                lineEditText=str(geneticSolver.maxGenerationsNoChange))
+        generalParamsLayout.addWidget(self.maxGenerationsNoChangeLineEdit)
+
+        generalParamsLayout.addWidget(QLabel("Pop. Initialization"))
+        self.initializationComboBox = QComboBox()
+        self.initializationComboBox.addItems(geneticSolver.initializationTypes)
+        startIndex = geneticSolver.initializationTypes.index(geneticSolver.initializationType)
+        self.initializationComboBox.setCurrentIndex(startIndex)
+        generalParamsLayout.addWidget(self.initializationComboBox)
+
         # Crossover parameters
         crossoverParamsWidget = QWidget()
         # crossoverParamsWidget.setMaximumWidth(200)
@@ -589,6 +602,8 @@ class Proj5GUI(QMainWindow):
         crossoverParamsLayout.addWidget(QLabel("Crossover Parent Selection Type"))
         self.crossoverTypeComboBox = QComboBox()
         self.crossoverTypeComboBox.addItems(geneticSolver.selectionTypes)
+        startIndex = geneticSolver.selectionTypes.index(geneticSolver.crossoverSelectionType)
+        self.crossoverTypeComboBox.setCurrentIndex(startIndex)
         crossoverParamsLayout.addWidget(self.crossoverTypeComboBox)
 
         # Mutation parameters
@@ -616,6 +631,8 @@ class Proj5GUI(QMainWindow):
         mutationParamsLayout.addWidget(QLabel("Mutation Parent Selection Type"))
         self.mutationTypeComboBox = QComboBox()
         self.mutationTypeComboBox.addItems(geneticSolver.selectionTypes)
+        startIndex = geneticSolver.selectionTypes.index(geneticSolver.mutationSelectionType)
+        self.mutationTypeComboBox.setCurrentIndex(startIndex)
         mutationParamsLayout.addWidget(self.mutationTypeComboBox)
 
         # Survivor selection parameters
@@ -650,6 +667,8 @@ class Proj5GUI(QMainWindow):
         survivorSelectionParamsLayout.addWidget(QLabel("Survivor Selection Type"))
         self.survivorSelectionTypeComboBox = QComboBox()
         self.survivorSelectionTypeComboBox.addItems(geneticSolver.selectionTypes)
+        startIndex = geneticSolver.selectionTypes.index(geneticSolver.survivorSelectionType)
+        self.survivorSelectionTypeComboBox.setCurrentIndex(startIndex)
         survivorSelectionParamsLayout.addWidget(self.survivorSelectionTypeComboBox)
 
 

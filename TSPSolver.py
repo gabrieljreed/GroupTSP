@@ -122,6 +122,18 @@ class GeneticSolver:
         SELECTION_FITNESS_SCALING,
     ]
 
+    # Initialization types
+    INITIALIZATION_PURE_RANDOM = "Pure Random Initialization"
+    INITIALIZATION_RANDOM = "Random Valid Initialization"
+    INITIALIZATION_IMPROVED_RANDOM = "Improved Random Initialization"
+    INITIALIZATION_GREEDY = "Greedy Initialization"
+    initializationTypes = [
+        INITIALIZATION_PURE_RANDOM,
+        INITIALIZATION_RANDOM,
+        INITIALIZATION_IMPROVED_RANDOM,
+        INITIALIZATION_GREEDY,
+    ]
+
     def __init__(self, scenario, time_allowance=60.0):
         """Initialize the genetic algorithm solver."""
         self._scenario = scenario
@@ -136,6 +148,7 @@ class GeneticSolver:
         self.populationSize = 100
         self.maxGenerationsNoChange = 100
         self.pruneInfinites = False
+        self.initializationType = self.INITIALIZATION_GREEDY
 
         # Crossover parameters
         self.numCrossoversPerGeneration = 50
@@ -226,12 +239,20 @@ class GeneticSolver:
 
     def initializePopulation(self):
         """Initialize the population for the genetic algorithm."""
-        # Uncomment the line you want to use to initialize the population
+        initializationFunction = None
+        if self.initializationType == self.INITIALIZATION_PURE_RANDOM:
+            initializationFunction = self.createPureRandomSolution
+        elif self.initializationType == self.INITIALIZATION_RANDOM:
+            initializationFunction = self.createRandomSolution
+        elif self.initializationType == self.INITIALIZATION_IMPROVED_RANDOM:
+            initializationFunction = self.createRandomSolutionBetter
+        elif self.initializationType == self.INITIALIZATION_GREEDY:
+            initializationFunction = self.createRandomSolutionGreedy
+        else:
+            raise Exception(f"Invalid initialization type {self.initializationType}")
+
         for i in range(self.populationSize):
-            # self._population.append(self.createPureRandomSolution())
-            # self._population.append(self.createRandomSolution())
-            # self._population.append(self.createRandomSolutionBetter())
-            self._population.append(self.createRandomSolutionGreedy())
+            self._population.append(initializationFunction())
 
     def createRandomSolution(self):
         """Create a random solution for the genetic algorithm."""
