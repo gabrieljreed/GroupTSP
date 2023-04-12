@@ -289,9 +289,9 @@ class Proj5GUI(QMainWindow):
     def setGeneticSolverInputs(self):
         self.solver.geneticSolver.populationSize = int(self.populationSizeLineEdit.text())
         self.solver.geneticSolver.newChildrenPerGeneration = int(self.newChildrenLineEdit.text())
+        self.solver.geneticSolver.pruneInfinites = self.pruneInfinitesCheckBox.isChecked()
 
         self.solver.geneticSolver.numCrossoversPerGeneration = int(self.crossoverLineEdit.text())
-        self.solver.geneticSolver.numCrossoverSplits = int(self.numCrossoverSplits.text())
         self.solver.geneticSolver.crossoverSelectionType = self.crossoverTypeComboBox.currentText()
 
         self.solver.geneticSolver.numMutationsPerGeneration = int(self.numMutationsPerGenerationLineEdit.text())
@@ -542,6 +542,10 @@ class Proj5GUI(QMainWindow):
                                                      lineEditText=str(geneticSolver.newChildrenPerGeneration))
         generalParamsLayout.addWidget(self.newChildrenLineEdit)
 
+        self.pruneInfinityCheckbox = QCheckBox("Prune Children with infinite cost")
+        self.pruneInfinityCheckbox.setChecked(geneticSolver.pruneInfinites)
+        generalParamsLayout.addWidget(self.pruneInfinityCheckbox)
+
         # Crossover parameters
         crossoverParamsWidget = QWidget()
         # crossoverParamsWidget.setMaximumWidth(200)
@@ -555,10 +559,6 @@ class Proj5GUI(QMainWindow):
         self.crossoverLineEdit = LineEditWithLabel(labelText="Crossovers per generation",
                                                    lineEditText=str(geneticSolver.numCrossoversPerGeneration))
         crossoverParamsLayout.addWidget(self.crossoverLineEdit)
-
-        self.numCrossoverSplits = LineEditWithLabel(labelText="Number of Crossover Splits",
-                                                    lineEditText=str(geneticSolver.numCrossoverSplits))
-        crossoverParamsLayout.addWidget(self.numCrossoverSplits)
 
         crossoverParamsLayout.addWidget(QLabel("Crossover Parent Selection Type"))
         self.crossoverTypeComboBox = QComboBox()

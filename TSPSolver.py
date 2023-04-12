@@ -132,10 +132,10 @@ class GeneticSolver:
         self.populationSize = 100
         self.newChildrenPerGeneration = 50
         self.maxGenerationsNoChange = 100
+        self.pruneInfinites = False
 
         # Crossover parameters
         self.numCrossoversPerGeneration = 50
-        self.numCrossoverSplits = 2
         self.crossoverSelectionType = self.SELECTION_ROULETTE
 
         # Mutation parameters
