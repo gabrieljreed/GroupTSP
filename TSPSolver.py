@@ -155,6 +155,7 @@ class GeneticSolver:
 
         self.initializePopulation()
         self._bssf = self._population[0]
+        self.bssf_updates = 0
 
         while True:
             self._generation += 1
@@ -182,7 +183,7 @@ class GeneticSolver:
         results["cost"] = solution.cost
         results["time"] = endTime - self._startTime
         results["soln"] = solution
-        results["count"] = 1
+        results["count"] = self.bssf_updates
         results["max"] = None
         results["total"] = None
         results["pruned"] = None
@@ -212,7 +213,6 @@ class GeneticSolver:
             if solution.calculateFitness() < np.inf:
                 # Found a valid route
                 foundTour = True
-
         return solution
 
     def crossover(self):  # TODO: Implement
@@ -311,48 +311,60 @@ class GeneticSolver:
             solution.calculateFitness()
             if solution._fitness < self._bssf._fitness:
                 self._bssf = solution
+                self.bssf_updates += 1
         # Do we need this once we have actual selection?
         for solution in self._children:
             solution.calculateFitness()
             if solution._fitness < self._bssf._fitness:
                 self._bssf = solution
+                self.bssf_updates += 1
 
     def survivorSelection(self):  # TODO: Implement
         """Perform survivor selection for the genetic algorithm."""
         num_old_survivors = int(self.percentOldSurvivors * self.populationSize)
         num_new_survivors = self.populationSize - num_old_survivors
 
-        selected = []
-        num_old_selected = 0
-        num_new_selected = 0
-        while num_old_selected < num_old_survivors:
+        selected = {}
+        iterations = 0
+        while len(selected) < num_old_survivors:
             if self.survivorSelectionType == self.SELECTION_TOURNAMENT:
-                selected.append(self.tournamentSelection(self._population, 2))
+                selected.add(
+                    self.tournamentSelection(self._population, self.tournamentSize)
+                )
             elif self.survivorSelectionType == self.SELECTION_ROULETTE:
-                selected.append(self.rouletteSelection(self._population))
+                selected.add(self.rouletteSelection(self._population))
             elif self.survivorSelectionType == self.SELECTION_RANKED:
-                selected.append(self.rankedSelection(self._population))
+                selected.add(self.rankedSelection(self._population))
             elif self.survivorSelectionType == self.SELECTION_FITNESS_SCALING:
-                selected.append(self.fitnessScalingSelection(self._population))
-            num_old_selected += 1
-        while num_new_selected < num_new_survivors:
+                selected.add(self.fitnessScalingSelection(self._population))
+            iterations += 1
+            if iterations >= 1000:
+                print("TRIED 1000 times old gen")
+                break
+        iterations = 0
+        while len(selected) < num_new_survivors + num_old_survivors:
             if self.survivorSelectionType == self.SELECTION_TOURNAMENT:
-                selected.append(self.tournamentSelection(self._children, 2))
+                selected.add(
+                    self.tournamentSelection(self._children, self.tournamentSize)
+                )
             elif self.survivorSelectionType == self.SELECTION_ROULETTE:
-                selected.append(self.rouletteSelection(self._children))
+                selected.add(self.rouletteSelection(self._children))
             elif self.survivorSelectionType == self.SELECTION_RANKED:
-                selected.append(self.rankedSelection(self._children))
+                selected.add(self.rankedSelection(self._children))
             elif self.survivorSelectionType == self.SELECTION_FITNESS_SCALING:
-                selected.append(self.fitnessScalingSelection(self._children))
-            num_new_selected += 1
-        temp_set = set(self._population)
-        print("Num unqique cities = ", len(temp_set))
-        self._population = selected
-        temp_set = set(selected)
-        print("Num unqique cities = ", len(temp_set))
+                selected.add(self.fitnessScalingSelection(self._children))
+            iterations += 1
+            if iterations >= 1000:
+                print("TRIED 1000 times new gen")
+                break
+        print("Population gen: ", self._generation)
+        self.printInfo(self._population)
+        print("Children gen: ", self._generation)
+        self.printInfo(self._children)
+        print("Selection gen: ", self._generation)
+        self.printInfo(selected)
+        self._population = list(selected)
         self._children = []
-        # TEMP unitl seleciton functions work
-        # self._population = self._population[0:50] + self._children[0:50]
 
     def selectParents(self):
         """Select parents for the genetic algorithm."""
@@ -361,7 +373,7 @@ class GeneticSolver:
             if self.crossoverSelectionType == self.SELECTION_ROULETTE:
                 parent = self.rouletteSelection(self._population)
             elif self.crossoverSelectionType == self.SELECTION_TOURNAMENT:
-                parent = self.tournamentSelection(self._population)
+                parent = self.tournamentSelection(self._population, self.tournamentSize)
             elif self.crossoverSelectionType == self.SELECTION_RANKED:
                 parent = self.rankedSelection(self._population)
             elif self.crossoverSelectionType == self.SELECTION_FITNESS_SCALING:
@@ -369,6 +381,18 @@ class GeneticSolver:
             if parent not in parents:
                 parents.append(parent)
         return parents
+
+    def printInfo(self, population):
+        temp_set = set(population)
+        print("Num unqique routes = ", len(temp_set))
+        temp_set.clear()
+        num_sol = 0
+        for p in population:
+            if p._fitness != np.inf:
+                num_sol += 1
+                temp_set.add(p)
+        print("Num of solutions", num_sol)
+        print("Num of unique valid solutions", len(temp_set))
 
     def rouletteSelection(self, population):
         """Perform roulette selection for the genetic algorithm."""
