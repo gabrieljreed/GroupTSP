@@ -497,12 +497,12 @@ class Proj5GUI(QMainWindow):
         for alg in self.ALGORITHMS:
             self.algDropDown.addItem(alg[0])
         self.algDropDown.activated.connect(self.algChanged)
-        self.algDropDown.setCurrentIndex(2)
+        self.algDropDown.setCurrentIndex(3)
 
         self.graphReady = False
 
         self.setupGeneticUI(self.geneticTabLayout)
-        self.algChanged(2)  # to handle start state
+        self.algChanged(3)  # to handle start state
 
         # Make sure the window isn't bigger than the screen
         self.resize(self.sizeHint())
