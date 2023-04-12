@@ -152,6 +152,8 @@ class GeneticSolver:
         """Solve the genetic algorithm problem."""
         self._startTime = time.time()
         self._generation = 0
+        self._population = []
+        self._children = []
 
         startTime = time.time()
         self.initializePopulation()
@@ -182,6 +184,8 @@ class GeneticSolver:
         solution = TSPSolution(self._bssf._solution)
         endTime = time.time()
 
+        print(f"Found solution {solution.cost} after {self._generation} generations in {endTime - self._startTime} seconds.")
+
         results = {}
         results["cost"] = solution.cost
         results["time"] = endTime - self._startTime
@@ -195,10 +199,12 @@ class GeneticSolver:
 
     def initializePopulation(self):
         """Initialize the population for the genetic algorithm."""
+        # Uncomment the line you want to use to initialize the population
         for i in range(self.populationSize):
+            # self._population.append(self.createPureRandomSolution())
             # self._population.append(self.createRandomSolution())
+            # self._population.append(self.createRandomSolutionBetter())
             self._population.append(self.createRandomSolutionGreedy())
-            # self._population.append(greedyTSP(self._scenario.getCities(), time_allowance=self._timeAllowance))
 
     def createRandomSolution(self):
         """Create a random solution for the genetic algorithm."""
@@ -222,6 +228,57 @@ class GeneticSolver:
                 foundTour = True
                 print(f"Found a valid route after {i} attempts")
         return solution
+
+    def createPureRandomSolution(self):
+        """Create a pure random solution without worrying if it's valid."""
+        cities = self._scenario.getCities()
+        ncities = len(cities)
+
+        # create a random permutation
+        perm = np.random.permutation(ncities)
+        route = []
+        # Now build the route using the random permutation
+        for i in range(ncities):
+            route.append(cities[perm[i]])
+
+        solution = GeneticSolution(route, self._generation)
+        return solution
+
+    def createRandomSolutionBetter(self):
+        """Create a random solution that's hopefully better than the previous implementation."""
+        cities = self._scenario.getCities()
+        ncities = len(cities)
+
+        foundTour = False
+        while not foundTour:
+            # Pick a starting city
+            startCity = cities[randrange(ncities)]
+
+            # Create a list of cities to visit
+            citiesToVisit = cities.copy()
+            citiesToVisit.remove(startCity)
+
+            # Create a route
+            route = [startCity]
+            i = 0
+            while len(citiesToVisit) > 0:
+                # Pick a random city and see if there is a path to it
+                randomCity = citiesToVisit[randrange(len(citiesToVisit))]
+                i += 1
+                if i > 50:
+                    # We've tried 50 times to find a path to a random city, so start over
+                    break
+                # if self._scenario.getDistance(route[-1], randomCity) < np.inf:
+                if route[-1].costTo(randomCity) < np.inf:
+                    # There is a path to the random city, so add it to the route
+                    route.append(randomCity)
+                    citiesToVisit.remove(randomCity)
+                    i = 0
+
+            if len(citiesToVisit) == 0:
+                # We found a valid route
+                foundTour = True
+        return GeneticSolution(route, self._generation)
 
     def createRandomSolutionGreedy(self):
         """Create a random solution for the genetic algorithm."""
@@ -674,11 +731,11 @@ def greedyTSP(cities, time_allowance=60.0, startIndex=0, startTime=None):
 
     # If the route found isn't complete, run the alrogithm again with a different starting city
     if len(route) != len(cities) or route[-1].costTo(route[0]) == math.inf:
-        print("Route not complete, running again with different starting city")
+        # print("Route not complete, running again with different starting city")
         return greedyTSP(
             cities,
             time_allowance=time_allowance,
-            startIndex=startIndex + 1,
+            startIndex=(startIndex + 1) % len(cities),
             startTime=startTime,
         )
 
