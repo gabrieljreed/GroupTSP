@@ -352,7 +352,7 @@ class GeneticSolver:
         temp_set = set(selected)
         print("Num unqique cities = ", len(temp_set))
         self._children = []
-        # TEMP unitl seleciton functions work
+        # TEMP until seleciton functions work
         # self._population = self._population[0:50] + self._children[0:50]
 
     def selectParents(self):
@@ -396,9 +396,9 @@ class GeneticSolver:
         """Perform roulette selection for the genetic algorithm."""
         # Get items not yet selected
         selectableOptions = self.getSelectableOptions(population)
-    
+        
         # Create an array of inverted (and scaled) fitness values (so smaller values win)
-        fitnessValues = [((1 / city.calculateFitness())) for city in selectableOptions]
+        fitnessValues = [((1 / city._fitness)) for city in selectableOptions]
         print(str(fitnessValues))
 
         # Total our new massage fitness values
@@ -411,7 +411,7 @@ class GeneticSolver:
 
         partialSum = 0.0
         for city in selectableOptions:
-            partialSum += (1 / city.calculateFitness())
+            partialSum += (1 / city._fitness)
             if partialSum >= rand:
                 self.updateSelectableOptions(population, city)
                 return city
@@ -453,7 +453,7 @@ class GeneticSolver:
     
         # Sort the solutions by their fitness scores
         #selectableOptions = sorted(population)
-        selectableOptions.sort(key=lambda city: city.calculateFitness())
+        selectableOptions.sort(key=lambda city: city._fitness)
 
         # Assign ranks to each solution
         ranks = {}
@@ -481,7 +481,7 @@ class GeneticSolver:
         # Get items not yet selected
         selectableOptions = self.getSelectableOptions(population)
 
-        fitnessValues = [city.calculateFitness() for city in selectableOptions]
+        fitnessValues = [city._fitness for city in selectableOptions]
         minFitness = min(fitnessValues)
         maxFitness = max(fitnessValues)
         
@@ -490,7 +490,7 @@ class GeneticSolver:
 
         for city in selectableOptions:
             if maxFitness != minFitness:
-                scaledVal = (city.calculateFitness() - minFitness) * (100 / (maxFitness - minFitness))
+                scaledVal = (city._fitness - minFitness) * (100 / (maxFitness - minFitness))
             else:
                 scaledVal = 0
             
