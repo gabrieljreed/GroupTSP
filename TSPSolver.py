@@ -309,12 +309,10 @@ class GeneticSolver:
     def evaluate(self):
         """Evaluate the population for the genetic algorithm."""
         for solution in self._population:
-            solution.calculateFitness()
             if solution._fitness < self._bssf._fitness:
                 self._bssf = solution
         # Do we need this once we have actual selection?
         for solution in self._children:
-            solution.calculateFitness()
             if solution._fitness < self._bssf._fitness:
                 self._bssf = solution
 
