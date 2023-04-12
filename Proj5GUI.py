@@ -506,8 +506,6 @@ class Proj5GUI(QMainWindow):
 
         # Make sure the window isn't bigger than the screen
         self.resize(self.sizeHint())
-        self.setMinimumSize(self.sizeHint())
-        self.setMaximumSize(self.sizeHint())
 
         self.show()
 
