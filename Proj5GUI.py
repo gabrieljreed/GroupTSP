@@ -287,7 +287,7 @@ class Proj5GUI(QMainWindow):
 
     def setGeneticSolverInputs(self):
         self.solver.geneticSolver.populationSize = int(self.populationSizeLineEdit.text())
-        self.solver.geneticSolver.pruneInfinites = self.pruneInfinitesCheckBox.isChecked()
+        self.solver.geneticSolver.pruneInfinites = self.pruneInfinityCheckbox.isChecked()
 
         self.solver.geneticSolver.numCrossoversPerGeneration = int(self.crossoverLineEdit.text())
         self.solver.geneticSolver.crossoverSelectionType = self.crossoverTypeComboBox.currentText()
