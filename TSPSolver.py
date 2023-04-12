@@ -153,7 +153,10 @@ class GeneticSolver:
         self._startTime = time.time()
         self._generation = 0
 
+        startTime = time.time()
         self.initializePopulation()
+        endTime = time.time()
+        print(f"Population initialization took {endTime - startTime} seconds.")
         self._bssf = self._population[0]
         self.bssf_updates = 0
 
@@ -185,7 +188,7 @@ class GeneticSolver:
         results["soln"] = solution
         results["count"] = self.bssf_updates
         results["max"] = None
-        results["total"] = None
+        results["total"] = self._generation
         results["pruned"] = None
 
         return results
@@ -193,27 +196,40 @@ class GeneticSolver:
     def initializePopulation(self):
         """Initialize the population for the genetic algorithm."""
         for i in range(self.populationSize):
-            self._population.append(self.createRandomSolution(self._generation))
+            # self._population.append(self.createRandomSolution())
+            self._population.append(self.createRandomSolutionGreedy())
+            # self._population.append(greedyTSP(self._scenario.getCities(), time_allowance=self._timeAllowance))
 
-    def createRandomSolution(self, generation):
+    def createRandomSolution(self):
         """Create a random solution for the genetic algorithm."""
         cities = self._scenario.getCities()
         ncities = len(cities)
 
         foundTour = False
+        i = 0
         while not foundTour:
             # create a random permutation
+            i += 1
             perm = np.random.permutation(ncities)
             route = []
             # Now build the route using the random permutation
             for i in range(ncities):
                 route.append(cities[perm[i]])
 
-            solution = GeneticSolution(route, generation)
+            solution = GeneticSolution(route, self._generation)
             if solution.calculateFitness() < np.inf:
                 # Found a valid route
                 foundTour = True
+                print(f"Found a valid route after {i} attempts")
         return solution
+
+    def createRandomSolutionGreedy(self):
+        """Create a random solution for the genetic algorithm."""
+        randomStartIndex = randrange(len(self._scenario.getCities()))
+        solution = greedyTSP(self._scenario.getCities(), time_allowance=self._timeAllowance,
+                             startIndex=randomStartIndex)
+        route = solution["soln"].route
+        return GeneticSolution(route, self._generation)
 
     def crossover(self):  # TODO: Implement
         generation_crossovers_perfromed = 0
