@@ -637,6 +637,8 @@ class Proj5GUI(QMainWindow):
         self.percentOldSurvivorsSlider = QSlider(QtCore.Qt.Orientation.Horizontal)
         self.percentOldSurvivorsSlider.setMinimum(0)
         self.percentOldSurvivorsSlider.setMaximum(100)
+        defaultPercent = int(geneticSolver.percentOldSurvivors * 100)
+        self.percentOldSurvivorsSlider.setValue(defaultPercent)
         percentOldSurvivorsLayout.addWidget(self.percentOldSurvivorsSlider)
         self.percentOldSurvivorsLabel = QLabel()
         self.percentOldSurvivorsLabel.setText(f"{self.percentOldSurvivorsSlider.value()}%")
