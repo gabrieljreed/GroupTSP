@@ -226,8 +226,11 @@ class GeneticSolver:
     def createRandomSolutionGreedy(self):
         """Create a random solution for the genetic algorithm."""
         randomStartIndex = randrange(len(self._scenario.getCities()))
-        solution = greedyTSP(self._scenario.getCities(), time_allowance=self._timeAllowance,
-                             startIndex=randomStartIndex)
+        solution = greedyTSP(
+            self._scenario.getCities(),
+            time_allowance=self._timeAllowance,
+            startIndex=randomStartIndex,
+        )
         route = solution["soln"].route
         return GeneticSolution(route, self._generation)
 
@@ -236,7 +239,7 @@ class GeneticSolver:
         interations = 0
         while generation_crossovers_perfromed < self.numCrossoversPerGeneration:
             interations += 1
-            if interations >= 1000:
+            if interations >= 10000:
                 print("Probably stuck in crossover")
                 exit()
             parents = self.selectParents()
@@ -330,7 +333,7 @@ class GeneticSolver:
                 route_mutations_performed += 1
             solution = GeneticSolution(old_route, self._generation)
             if self.pruneInfinites and solution._fitness == math.inf:
-                if iterations >= 1000:
+                if iterations >= 10000:
                     print("probably too many iterations in mutation")
                     exit()
                 continue
