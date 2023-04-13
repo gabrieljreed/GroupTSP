@@ -533,132 +533,73 @@ class GeneticSolver:
         print("Num of solutions", num_sol)
         print("Num of unique valid solutions", len(temp_set))
 
-    def getSelectableOptions(self, population):
-        # Using string version of the population as key for now (inefficient)
-        key = str(population)
-
-        # Create a copy of the initial population from which to begin selecting
-        if not key in self.selectableOptionsMap:
-            self.selectableOptionsMap[key] = population.copy()
-
-        return self.selectableOptionsMap[key]
-
-    def updateSelectableOptions(self, population, selection):
-        # Retrieve the subset of items that have yet to be selected
-        selectableOptions = self.getSelectableOptions(population)
-
-        # Remove the options being selected, so it is not returned again
-        selectableOptions.remove(selection)
-
-        # When last item has been selected, set us up for a reload of the full population
-        if len(selectableOptions) == 0:
-            self.selectableOptionsMap.pop(str(population))
-
     def rouletteSelection(self, population):
         """Perform roulette selection for the genetic algorithm."""
-        # Get items not yet selected
-        selectableOptions = self.getSelectableOptions(population)
-
         # Create an array of inverted (and scaled) fitness values (so smaller values win)
-        fitnessValues = [((1 / city._fitness)) for city in selectableOptions]
-        # print(str(fitnessValues))
+        fitnessValues = [((1 / city._fitness)) for city in population]
 
         # Total our new massage fitness values
         totalFitness = sum(fitnessValues)
-        # print("total fitness:" + str(totalFitness))
 
         # Pick a random number in the range of our fitness sum
         rand = random.uniform(0, 1) * totalFitness
-        # print("rand:" + str(rand))
 
         partialSum = 0.0
-        for city in selectableOptions:
+        for city in population:
             partialSum += 1 / city._fitness
             if partialSum >= rand:
-                self.updateSelectableOptions(population, city)
                 return city
 
     def tournamentSelection(self, population, tournamentSize=5):
         """Perform tournament selection for the genetic algorithm."""
-        """Note that the tournamentSize parameter sets the number 
-        of solutions that will compete in each tournament. The higher 
-        the value of tournamentSize, the stronger the selection pressure will be, 
-        and the more likely it is that the best solutions will be selected as parents. 
-        However, larger tournaments also increase the risk of premature convergence, 
-        because they reduce the diversity of the population. Therefore, you should 
-        experiment with different values of tournamentSize to find the one that works 
-        best for your problem."""
         # Initial array of candidates for selection
         participants = []
 
-        # Get items not yet selected
-        selectableOptions = self.getSelectableOptions(population)
-
         for i in range(tournamentSize):
-            selectedCity = selectableOptions[
-                random.randint(0, len(selectableOptions) - 1)
+            selectedCity = population[
+                random.randint(0, len(population) - 1)
             ]
             participants.append(selectedCity)
 
-        # print("participants:" + str(participants))
-
         # Pick the minimum value among candidates for selection
         selection = min(participants, key=lambda x: x._fitness)
-
-        # Update options to remove the selection from future consideration
-        self.updateSelectableOptions(population, selection)
 
         return selection
 
     def rankedSelection(self, population):
         """Perform ranked selection for the genetic algorithm."""
-        # Get items not yet selected
-        selectableOptions = self.getSelectableOptions(population)
-
         # Sort the solutions by their fitness scores
-        # selectableOptions = sorted(population)
-        selectableOptions.sort(key=lambda city: city._fitness)
+        population.sort(key=lambda city: city._fitness)
 
         # Assign ranks to each solution
         ranks = {}
-        for i, city in enumerate(selectableOptions):
-            ranks[city] = len(selectableOptions) - i
-        # print("ranks:" + str(ranks))
+        for i, city in enumerate(population):
+            ranks[city] = len(population) - i
 
         # Calculate selection probabilities
-        totalRank = sum([ranks[city] for city in selectableOptions])
+        totalRank = sum([ranks[city] for city in population])
 
         # Pick a random number in the range of our rank sum
         rand = random.randint(0, totalRank)
 
         partialSum = 0
-        for city in selectableOptions:
+        for city in population:
             partialSum += ranks[city]
             if partialSum >= rand:
-                self.updateSelectableOptions(population, city)
                 return city
 
-    def fitnessScalingSelection(
-        self, population
-    ):  # TODO: fix bug causing None to be selected
-        # consider making this a check box rather than one of the drop
-        # down options since it can be used with a selection
+    def fitnessScalingSelection(self, population):
         """Perform fitness scaling selection for the genetic algorithm."""
-        # Get items not yet selected
-        selectableOptions = self.getSelectableOptions(population)
-
-        fitnessValues = [city._fitness for city in selectableOptions]
+        fitnessValues = [city._fitness for city in population]
         minFitness = min(fitnessValues)
         maxFitness = max(fitnessValues)
 
         # Scale values to fit in the 0 - 100 range
         scaledValues = {}
 
-        for city in selectableOptions:
+        for city in population:
             if maxFitness != minFitness:
-                scaledVal = (city._fitness - minFitness) * (
-                    100 / (maxFitness - minFitness)
-                )
+                scaledVal = (city._fitness - minFitness) * (100 / (maxFitness - minFitness))
             else:
                 scaledVal = 0
 
@@ -668,7 +609,7 @@ class GeneticSolver:
 
         # Create an array of inverted (and scaled) fitness values (so smaller values win)
         fitnessValues = []
-        for city in selectableOptions:
+        for city in population:
             if scaledValues[city] != 0:
                 fitnessValues.append((1 / scaledValues[city]) * 1000)
             else:
@@ -678,21 +619,13 @@ class GeneticSolver:
 
         # Pick a random number in the range of our fitness sum
         rand = random.randint(0, int(totalFitness))
-        # print("scaled values: " + str(scaledValues))
-        # print("total fitness: " + str(totalFitness))
-        # print("rand: " + str(rand))
 
         partialSum = 0
-        for city in selectableOptions:
+        for city in population:
             if scaledValues[city] != 0:
                 partialSum += 1 / scaledValues[city] * 1000
 
-            if partialSum >= rand or len(selectableOptions) == 1:
-                # print("partial sum: " + str(partialSum))
-                # if len(selectableOptions) == 1:
-                #    print("Handling special 'end cap' case")
-                self.updateSelectableOptions(population, city)
-
+            if partialSum >= rand or len(population) == 1:
                 return city
 
 
