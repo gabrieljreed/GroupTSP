@@ -201,7 +201,9 @@ class GeneticSolver:
         solution = TSPSolution(self._bssf._solution)
         endTime = time.time()
 
-        print(f"Found solution {solution.cost} after {self._generation} generations in {endTime - self._startTime} seconds.")
+        print(
+            f"Found solution {solution.cost} after {self._generation} generations in {endTime - self._startTime} seconds."
+        )
 
         results = {}
         results["cost"] = solution.cost
@@ -477,9 +479,9 @@ class GeneticSolver:
             elif self.survivorSelectionType == self.SELECTION_FITNESS_SCALING:
                 selected.add(self.fitnessScalingSelection(self._population))
             iterations += 1
-            if iterations >= 1000:
-                print("TRIED 1000 times old gen")
-                break
+            if iterations >= 10000:
+                print("TRIED 10000 times old gen")
+                exit()
         iterations = 0
         while len(selected) < num_new_survivors + num_old_survivors:
             if self.survivorSelectionType == self.SELECTION_TOURNAMENT:
@@ -493,9 +495,11 @@ class GeneticSolver:
             elif self.survivorSelectionType == self.SELECTION_FITNESS_SCALING:
                 selected.add(self.fitnessScalingSelection(self._children))
             iterations += 1
-            if iterations >= 1000:
-                print("TRIED 1000 times new gen")
-                break
+            if iterations >= 10000:
+                print("TRIED 10000 times new gen")
+                print(len(selected))
+                print(len(set(self._children)))
+                exit()
         # print("Population gen: ", self._generation)
         # self.printInfo(self._population)
         # print("Children gen: ", self._generation)
@@ -556,9 +560,7 @@ class GeneticSolver:
         participants = []
 
         for i in range(tournamentSize):
-            selectedCity = population[
-                random.randint(0, len(population) - 1)
-            ]
+            selectedCity = population[random.randint(0, len(population) - 1)]
             participants.append(selectedCity)
 
         # Pick the minimum value among candidates for selection
@@ -599,7 +601,9 @@ class GeneticSolver:
 
         for city in population:
             if maxFitness != minFitness:
-                scaledVal = (city._fitness - minFitness) * (100 / (maxFitness - minFitness))
+                scaledVal = (city._fitness - minFitness) * (
+                    100 / (maxFitness - minFitness)
+                )
             else:
                 scaledVal = 0
 
