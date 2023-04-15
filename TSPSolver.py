@@ -546,10 +546,7 @@ class GeneticSolver:
         fitnessValues = [
             ((1 / city._fitness)) for city in population if city not in selected
         ]
-        # fitnessValues = []
-        # for city in population:
-        #     if city not in selected:
-        #         fitnessValues.append(1 / city._fitness)
+
         # Total our new massage fitness values
         totalFitness = sum(fitnessValues)
 
@@ -605,15 +602,22 @@ class GeneticSolver:
         minFitness = min(fitnessValues)
         maxFitness = max(fitnessValues)
 
+        if maxFitness == math.inf:
+            maxFitness = 10000000
+
+        if minFitness == math.inf:
+            minFitness = 10000000
+
         # Scale values to fit in the 0 - 100 range
         scaledValues = {}
 
         for city in population:
             if city not in selected:
                 if maxFitness != minFitness:
-                    scaledVal = (city._fitness - minFitness) * (
-                        100 / (maxFitness - minFitness)
-                    )
+                    if city._fitness == math.inf:
+                        scaledVal = 10000000
+                    else:
+                        scaledVal = (city._fitness - minFitness) * (100 / (maxFitness - minFitness))
                 else:
                     scaledVal = 0
 
