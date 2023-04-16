@@ -341,27 +341,32 @@ class GeneticSolver:
         route = solution["soln"].route
         return GeneticSolution(route, self._generation)
 
+    # O(num_crossovers * n)
     def crossover(self):
         generation_crossovers_perfromed = 0
         interations = 0
         # Do as many crossovers user picked in the GUI
+        # O(num_cross_overs)
         while generation_crossovers_perfromed < self.numCrossoversPerGeneration:
             interations += 1
             if interations >= 10000:
                 raise Exception(
                     f"Stuck in the crossover function for more than 10000 iterations"
                 )
+            # O(selction functions)
             parents = self.selectParents()
             parent1 = parents[0]._solution
             parent2 = parents[1]._solution
 
             # Get a starting and ending index and initialize the children to inf
+            # O(1)
             first_index = randrange(len(parent1))
             second_index = randrange(len(parent2))
             child1 = [math.inf] * len(parent1)
             child2 = [math.inf] * len(parent2)
 
             # Make sure our indexes are in order
+            # O(1)
             if first_index > second_index:
                 temp = first_index
                 first_index = second_index
@@ -374,6 +379,7 @@ class GeneticSolver:
                 + child1[second_index:]
             )
             # Fill in the child with parts from parent 2
+            # O(n)
             for i in range(first_index, second_index):
                 if parent2[i] not in child1:
                     parent1_temp = parent1[i]
@@ -387,11 +393,13 @@ class GeneticSolver:
             # Fill in anything not yet filled out
             for i in range(len(parent1)):
                 child1[i] = child1[i] if child1[i] != math.inf else parent2[i]
+            # O(n)
             child1 = GeneticSolution(child1, self._generation)
             # Don't add if we are pruning infinities and it is an infinite cost
             if self.pruneInfinites and child1._fitness == math.inf:
                 continue
             # Same thing for child2, but with the parents swithced
+            # O(n)
             child2 = (
                 child2[0:first_index]
                 + parent2[first_index:second_index]
@@ -409,6 +417,7 @@ class GeneticSolver:
                     child2[parent1_index] = parent1[i]
             for i in range(len(parent2)):
                 child2[i] = child2[i] if child2[i] != math.inf else parent1[i]
+            # O(n)
             child2 = GeneticSolution(child2, self._generation)
             if self.pruneInfinites and child2._fitness == math.inf:
                 continue
@@ -417,15 +426,18 @@ class GeneticSolver:
             self._children.append(child2)
             generation_crossovers_perfromed += 1
 
+    # O(num_mutations * n)
     def mutation(self):
         """Perform mutation for the genetic algorithm."""
         generation_mutations_performed = 0
         iterations = 0
         # Perform as many as the gui asked
+        # O(num_mutations)
         while generation_mutations_performed < self.numMutationsPerGeneration:
             iterations += 1
             # Select the parent
             to_mutate = self._population[randrange(self.populationSize)]
+            # O(selection_functions)
             if self.mutationSelectionType == self.SELECTION_TOURNAMENT:
                 to_mutate = self.tournamentSelection(
                     self._population, self.tournamentSize
@@ -436,10 +448,11 @@ class GeneticSolver:
                 to_mutate = self.rankedSelection(self._population)
             elif self.mutationSelectionType == self.SELECTION_FITNESS_SCALING:
                 to_mutate = self.fitnessScalingSelection(self._population, [])
-
+            # O(n)
             old_route = copy(to_mutate._solution)
             route_mutations_performed = 0
             # Swap two random indexes
+            # O(num_muations) = O(1)
             while route_mutations_performed < self.numMutationsPerSolution:
                 first_index = randrange(len(old_route))
                 second_index = randrange(len(old_route))
@@ -448,6 +461,7 @@ class GeneticSolver:
                 old_route[second_index] = temp
                 route_mutations_performed += 1
             # Create the soultion and check if it is infinity
+            # O(n)
             solution = GeneticSolution(old_route, self._generation)
             if self.pruneInfinites and solution._fitness == math.inf:
                 if iterations >= 10000:
@@ -470,6 +484,7 @@ class GeneticSolver:
                 self._bssf = solution
                 self.bssf_updates += 1
 
+    # O(pop_size * selection_functions)
     def survivorSelection(self):
         """Perform survivor selection for the genetic algorithm."""
         num_old_survivors = int(self.percentOldSurvivors * self.populationSize)
@@ -512,6 +527,7 @@ class GeneticSolver:
         self._population = list(selected)
         self._children = []
 
+    # O(selection_functions)
     def selectParents(self):
         """Select parents for the genetic algorithm."""
         parents = []
@@ -617,7 +633,9 @@ class GeneticSolver:
                     if city._fitness == math.inf:
                         scaledVal = 10000000
                     else:
-                        scaledVal = (city._fitness - minFitness) * (100 / (maxFitness - minFitness))
+                        scaledVal = (city._fitness - minFitness) * (
+                            100 / (maxFitness - minFitness)
+                        )
                 else:
                     scaledVal = 0
 
